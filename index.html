@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Controllo Veicoli</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f2f0eb;
+      color: #1d1d1d;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1100px, calc(100% - 30px));
+      margin: 0 auto;
+      padding: 35px 0 60px;
+    }
+
+    .hero {
+      background: #171717;
+      color: white;
+      padding: 35px;
+      border-radius: 22px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.18);
+    }
+
+    .brand {
+      margin: 0 0 8px;
+      color: #c9a45b;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 58px);
+    }
+
+    .description {
+      margin: 15px 0 0;
+      color: #d5d5d5;
+      line-height: 1.5;
+    }
+
+    .search-container {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 62px;
+      padding: 0 20px;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      outline: none;
+      font-size: 19px;
+    }
+
+    .search-input:focus {
+      border-color: #b38b3d;
+    }
+
+    .search-button {
+      min-width: 145px;
+      min-height: 62px;
+      padding: 0 25px;
+      border: 0;
+      border-radius: 14px;
+      background: #b38b3d;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .message {
+      min-height: 20px;
+      margin-top: 12px;
+      color: #d5d5d5;
+      font-size: 14px;
+    }
+
+    .message.error {
+      color: #ffaaa5;
+    }
+
+    .section {
+      margin-top: 35px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 15px;
+      margin-bottom: 14px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+    }
+
+    .vehicle-count {
+      color: #777;
+      font-size: 14px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+    }
+
+    table {
+      width: 100%;
+      min-width: 850px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 15px 17px;
+      border-bottom: 1px solid #e8e4dc;
+      text-align: left;
+    }
+
+    th {
+      background: #f6f3ed;
+      color: #555;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    tbody tr:hover {
+      background: #faf8f4;
+    }
+
+    .vehicle-name-button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #1d1d1d;
+      font-weight: bold;
+      text-decoration: underline;
+      text-decoration-color: #b38b3d;
+      text-underline-offset: 4px;
+      cursor: pointer;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 7px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .green {
+      background: #dff3e5;
+      color: #176332;
+    }
+
+    .yellow {
+      background: #fff0b8;
+      color: #775500;
+    }
+
+    .red {
+      background: #ffd9d6;
+      color: #91231e;
+    }
+
+    .neutral {
+      background: #eeeeee;
+      color: #555555;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      position: relative;
+      width: min(620px, 100%);
+      max-height: 88vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 22px;
+      box-shadow: 0 25px 75px rgba(0, 0, 0, 0.4);
+    }
+
+    .modal.green-popup {
+      background: #e4f5e9;
+      border: 4px solid #3d9158;
+    }
+
+    .modal.yellow-popup {
+      background: #fff3c5;
+      border: 4px solid #d49a18;
+    }
+
+    .modal.red-popup {
+      background: #fde4e2;
+      border: 4px solid #c94c45;
+    }
+
+    .modal.neutral-popup {
+      background: #eeeeee;
+      border: 4px solid #888888;
+    }
+
+    .modal-header {
+      padding: 28px 65px 22px 28px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .modal-body {
+      padding: 24px 28px 30px;
+    }
+
+    .close-button {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.1);
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .overall-status {
+      display: inline-block;
+      margin-top: 13px;
+      padding: 8px 12px;
+      border: 1px solid currentColor;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 18px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .detail-label {
+      color: #666;
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .detail-value {
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+
+    .date-note {
+      display: block;
+      margin-top: 5px;
+      font-size: 12px;
+      font-weight: normal;
+    }
+
+    .choice-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .choice-button {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #d7d2c9;
+      border-radius: 14px;
+      background: white;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .choice-button:hover {
+      border-color: #b38b3d;
+      background: #fbf7ed;
+    }
+
+    .choice-name {
+      display: block;
+      font-size: 17px;
+      font-weight: bold;
+    }
+
+    .choice-plate {
+      display: block;
+      margin-top: 5px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    @media (max-width: 650px) {
+      .page {
+        width: calc(100% - 20px);
+        padding-top: 10px;
+      }
+
+      .hero {
+        padding: 25px 18px;
+        border-radius: 18px;
+      }
+
+      .search-container {
+        grid-template-columns: 1fr;
+      }
+
+      .search-button {
+        width: 100%;
+      }
+
+      .section-title {
+        align-items: start;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .detail-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="page">
+
+    <section class="hero">
+
+      <p class="brand">Cambio Manuale</p>
+
+      <h1>Controllo veicoli</h1>
+
+      <p class="description">
+        Cerca una vettura per nome o targa.
+        Puoi inserire anche una parte del nome, per esempio “Abarth”.
+      </p>
+
+      <div class="search-container">
+
+        <input
+          id="searchInput"
+          class="search-input"
+          type="search"
+          placeholder="Cerca per nome o targa..."
+          autocomplete="off"
+        >
+
+        <button
+          id="searchButton"
+          class="search-button"
+          type="button"
+        >
+          Cerca
+        </button>
+
+      </div>
+
+      <div id="message" class="message">
+        Caricamento veicoli...
+      </div>
+
+    </section>
+
+    <section class="section">
+
+      <div class="section-title">
+
+        <h2>Lista veicoli</h2>
+
+        <span
+          id="vehicleCount"
+          class="vehicle-count"
+        ></span>
+
+      </div>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Nome</th>
+              <th>Targa</th>
+              <th>Assicurazione</th>
+              <th>Revisione</th>
+              <th>Documento</th>
+              <th>Area B &amp; C</th>
+              <th>Stato</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="vehicleTableBody"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <div
+    id="modalOverlay"
+    class="modal-overlay"
+  >
+
+    <div
+      id="modalContainer"
+      class="modal"
+    >
+
+      <button
+        id="closeModalButton"
+        class="close-button"
+        type="button"
+      >
+        ×
+      </button>
+
+      <div id="modalContent"></div>
+
+    </div>
+
+  </div>
+
+  <script>
+
+    /*
+      INCOLLA QUI IL LINK CSV DEL GOOGLE SHEET.
+
+      Esempio:
+
+      const SHEET_CSV_URL =
+        "https://docs.google.com/spreadsheets/d/e/XXXX/pub?output=csv";
+    */
+
+    const SHEET_CSV_URL =
+      "const SHEET_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT8TlSxIhvznxeUk6AUEDFHQcChXbhUnUYYxU3Ghz5eYr8kIZrDID4EsYl4jw0oWbYMjTVjjmjmec22/pub?gid=0&single=true&output=csv";";
+
+    /*
+      Una scadenza viene considerata vicina
+      quando mancano 30 giorni o meno.
+    */
+
+    const WARNING_DAYS = 30;
+
+    let vehicles = [];
+
+    const searchInput =
+      document.getElementById("searchInput");
+
+    const searchButton =
+      document.getElementById("searchButton");
+
+    const message =
+      document.getElementById("message");
+
+    const vehicleCount =
+      document.getElementById("vehicleCount");
+
+    const vehicleTableBody =
+      document.getElementById("vehicleTableBody");
+
+    const modalOverlay =
+      document.getElementById("modalOverlay");
+
+    const modalContainer =
+      document.getElementById("modalContainer");
+
+    const modalContent =
+      document.getElementById("modalContent");
+
+    const closeModalButton =
+      document.getElementById("closeModalButton");
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      loadVehicles
+    );
+
+    searchButton.addEventListener(
+      "click",
+      runSearch
+    );
+
+    searchInput.addEventListener(
+      "keydown",
+      event => {
+
+        if (event.key === "Enter") {
+          runSearch();
+        }
+
+      }
+    );
+
+    closeModalButton.addEventListener(
+      "click",
+      closeModal
+    );
+
+    modalOverlay.addEventListener(
+      "click",
+      event => {
+
+        if (event.target === modalOverlay) {
+          closeModal();
+        }
+
+      }
+    );
+
+    async function loadVehicles() {
+
+      try {
+
+        const response =
+          await fetch(SHEET_CSV_URL);
+
+        if (!response.ok) {
+          throw new Error(
+            "Errore durante il caricamento."
+          );
+        }
+
+        const csvText =
+          await response.text();
+
+        const rows =
+          parseCSV(csvText);
+
+        if (rows.length < 2) {
+          throw new Error(
+            "Il foglio non contiene dati."
+          );
+        }
+
+        const headers =
+          rows[0].map(
+            header => header.trim()
+          );
+
+        vehicles = rows
+          .slice(1)
+          .filter(
+            row =>
+              row.some(
+                cell => cell.trim() !== ""
+              )
+          )
+          .map(row => {
+
+            const vehicle = {};
+
+            headers.forEach(
+              (header, index) => {
+
+                vehicle[header] =
+                  row[index]?.trim() || "";
+
+              }
+            );
+
+            return vehicle;
+
+          });
+
+        renderTable();
+
+        message.classList.remove("error");
+
+        message.textContent =
+          `${vehicles.length} veicoli caricati.`;
+
+      } catch (error) {
+
+        console.error(error);
+
+        message.classList.add("error");
+
+        message.textContent =
+          "Errore nel caricamento. Controlla il link CSV.";
+
+      }
+
+    }
+
+    function renderTable() {
+
+      vehicleTableBody.innerHTML = "";
+
+      vehicleCount.textContent =
+        `${vehicles.length} veicoli`;
+
+      vehicles.forEach(
+        (vehicle, index) => {
+
+          const status =
+            getOverallStatus(vehicle);
+
+          const row =
+            document.createElement("tr");
+
+          row.innerHTML = `
+            <td>
+              <button
+                class="vehicle-name-button"
+                type="button"
+                data-index="${index}"
+              >
+                ${escapeHTML(vehicle.Nome)}
+              </button>
+            </td>
+
+            <td>
+              ${escapeHTML(vehicle.Targa || "—")}
+            </td>
+
+            <td>
+              ${escapeHTML(vehicle.Assicurazione || "—")}
+            </td>
+
+            <td>
+              ${escapeHTML(vehicle.Revisione || "—")}
+            </td>
+
+            <td>
+              ${escapeHTML(vehicle.Documento || "—")}
+            </td>
+
+            <td>
+              ${escapeHTML(
+                vehicle["Area B & C"] || "—"
+              )}
+            </td>
+
+            <td>
+              <span
+                class="status-pill ${status.level}"
+              >
+                ${escapeHTML(status.shortLabel)}
+              </span>
+            </td>
+          `;
+
+          vehicleTableBody.appendChild(row);
+
+        }
+      );
+
+      document
+        .querySelectorAll(
+          ".vehicle-name-button"
+        )
+        .forEach(button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              const index =
+                Number(button.dataset.index);
+
+              showVehicleDetails(
+                vehicles[index]
+              );
+
+            }
+          );
+
+        });
+
+    }
+
+    function runSearch() {
+
+      const query =
+        normalizeText(searchInput.value);
+
+      if (!query) {
+
+        showError(
+          "Scrivi il nome o la targa del veicolo."
+        );
+
+        return;
+
+      }
+
+      const results =
+        vehicles.filter(vehicle => {
+
+          const name =
+            normalizeText(vehicle.Nome);
+
+          const plate =
+            normalizeText(vehicle.Targa);
+
+          return (
+            name.includes(query) ||
+            plate.includes(query)
+          );
+
+        });
+
+      if (results.length === 0) {
+
+        showError(
+          "Nessun veicolo trovato."
+        );
+
+        return;
+
+      }
+
+      message.classList.remove("error");
+
+      message.textContent =
+        `${results.length} risultati trovati.`;
+
+      if (results.length === 1) {
+
+        showVehicleDetails(
+          results[0]
+        );
+
+      } else {
+
+        showVehicleChoice(
+          results
+        );
+
+      }
+
+    }
+
+    function showVehicleChoice(results) {
+
+      modalContainer.className = "modal";
+
+      modalContent.innerHTML = `
+        <div class="modal-header">
+
+          <h2>Scegli il veicolo</h2>
+
+          <p>
+            Sono stati trovati più risultati.
+          </p>
+
+        </div>
+
+        <div class="modal-body">
+
+          <div
+            id="choiceList"
+            class="choice-list"
+          ></div>
+
+        </div>
+      `;
+
+      const choiceList =
+        document.getElementById(
+          "choiceList"
+        );
+
+      results.forEach(vehicle => {
+
+        const button =
+          document.createElement("button");
+
+        button.type = "button";
+
+        button.className =
+          "choice-button";
+
+        button.innerHTML = `
+          <span class="choice-name">
+            ${escapeHTML(vehicle.Nome)}
+          </span>
+
+          <span class="choice-plate">
+            Targa:
+            ${escapeHTML(
+              vehicle.Targa || "non disponibile"
+            )}
+          </span>
+        `;
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            showVehicleDetails(vehicle);
+
+          }
+        );
+
+        choiceList.appendChild(button);
+
+      });
+
+      openModal();
+
+    }
+
+    function showVehicleDetails(vehicle) {
+
+      const overallStatus =
+        getOverallStatus(vehicle);
+
+      const insuranceStatus =
+        evaluateDate(
+          vehicle.Assicurazione
+        );
+
+      const inspectionStatus =
+        evaluateDate(
+          vehicle.Revisione
+        );
+
+      modalContainer.className =
+        `modal ${overallStatus.popupClass}`;
+
+      modalContent.innerHTML = `
+        <div class="modal-header">
+
+          <h2>
+            ${escapeHTML(vehicle.Nome)}
+          </h2>
+
+          <span class="overall-status">
+            ${escapeHTML(
+              overallStatus.fullLabel
+            )}
+          </span>
+
+        </div>
+
+        <div class="modal-body">
+
+          ${createDetailRow(
+            "Nome",
+            vehicle.Nome
+          )}
+
+          ${createDetailRow(
+            "Targa",
+            vehicle.Targa
+          )}
+
+          ${createDetailRow(
+            "Assicurazione",
+            vehicle.Assicurazione,
+            insuranceStatus.description
+          )}
+
+          ${createDetailRow(
+            "Revisione",
+            vehicle.Revisione,
+            inspectionStatus.description
+          )}
+
+          ${createDetailRow(
+            "Documento",
+            vehicle.Documento
+          )}
+
+          ${createDetailRow(
+            "Area B & C",
+            vehicle["Area B & C"]
+          )}
+
+          ${createDetailRow(
+            "Note",
+            vehicle.Note
+          )}
+
+        </div>
+      `;
+
+      openModal();
+
+    }
+
+    function createDetailRow(
+      label,
+      value,
+      note = ""
+    ) {
+
+      if (!value) {
+        return "";
+      }
+
+      return `
+        <div class="detail-row">
+
+          <div class="detail-label">
+            ${escapeHTML(label)}
+          </div>
+
+          <div class="detail-value">
+
+            ${escapeHTML(value)}
+
+            ${
+              note
+                ? `
+                  <span class="date-note">
+                    ${escapeHTML(note)}
+                  </span>
+                `
+                : ""
+            }
+
+          </div>
+
+        </div>
+      `;
+
+    }
+
+    function getOverallStatus(vehicle) {
+
+      const insuranceStatus =
+        evaluateDate(
+          vehicle.Assicurazione
+        );
+
+      const inspectionStatus =
+        evaluateDate(
+          vehicle.Revisione
+        );
+
+      const statuses = [
+        insuranceStatus,
+        inspectionStatus
+      ];
+
+      if (
+        statuses.some(
+          status =>
+            status.level === "red"
+        )
+      ) {
+
+        return {
+          level: "red",
+          popupClass: "red-popup",
+          shortLabel: "Scaduto",
+          fullLabel:
+            "Almeno una scadenza è superata"
+        };
+
+      }
+
+      if (
+        statuses.some(
+          status =>
+            status.level === "yellow"
+        )
+      ) {
+
+        return {
+          level: "yellow",
+          popupClass: "yellow-popup",
+          shortLabel: "In scadenza",
+          fullLabel:
+            "Almeno una scadenza è vicina"
+        };
+
+      }
+
+      if (
+        statuses.every(
+          status =>
+            status.level === "green"
+        )
+      ) {
+
+        return {
+          level: "green",
+          popupClass: "green-popup",
+          shortLabel: "Regolare",
+          fullLabel:
+            "Assicurazione e revisione regolari"
+        };
+
+      }
+
+      return {
+        level: "neutral",
+        popupClass: "neutral-popup",
+        shortLabel: "Da verificare",
+        fullLabel:
+          "Dati di scadenza da verificare"
+      };
+
+    }
+
+    function evaluateDate(rawDate) {
+
+      const date =
+        parseDate(rawDate);
+
+      if (!date) {
+
+        return {
+          level: "neutral",
+          description:
+            "Data non riconosciuta."
+        };
+
+      }
+
+      const today =
+        new Date();
+
+      today.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+      date.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+      const differenceInDays =
+        Math.ceil(
+          (
+            date.getTime() -
+            today.getTime()
+          ) /
+          86400000
+        );
+
+      if (differenceInDays < 0) {
+
+        return {
+          level: "red",
+          description:
+            `Scaduta da ${Math.abs(
+              differenceInDays
+            )} giorni.`
+        };
+
+      }
+
+      if (
+        differenceInDays <=
+        WARNING_DAYS
+      ) {
+
+        return {
+          level: "yellow",
+          description:
+            differenceInDays === 0
+              ? "Scade oggi."
+              : `Scade tra ${differenceInDays} giorni.`
+        };
+
+      }
+
+      return {
+        level: "green",
+        description:
+          `Regolare. Mancano ${differenceInDays} giorni.`
+      };
+
+    }
+
+    function parseDate(value) {
+
+      if (!value) {
+        return null;
+      }
+
+      const text =
+        String(value).trim();
+
+      const match =
+        text.match(
+          /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/
+        );
+
+      if (!match) {
+        return null;
+      }
+
+      const day =
+        Number(match[1]);
+
+      const month =
+        Number(match[2]);
+
+      const year =
+        Number(match[3]);
+
+      const date =
+        new Date(
+          year,
+          month - 1,
+          day
+        );
+
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+      ) {
+        return null;
+      }
+
+      return date;
+
+    }
+
+    function normalizeText(value) {
+
+      return String(value || "")
+        .normalize("NFD")
+        .replace(
+          /[\u0300-\u036f]/g,
+          ""
+        )
+        .toLowerCase()
+        .replace(
+          /[^a-z0-9]+/g,
+          " "
+        )
+        .replace(
+          /\s+/g,
+          " "
+        )
+        .trim();
+
+    }
+
+    function parseCSV(csvText) {
+
+      const rows = [];
+
+      let row = [];
+
+      let cell = "";
+
+      let insideQuotes = false;
+
+      for (
+        let index = 0;
+        index < csvText.length;
+        index++
+      ) {
+
+        const character =
+          csvText[index];
+
+        const nextCharacter =
+          csvText[index + 1];
+
+        if (
+          character === '"' &&
+          insideQuotes &&
+          nextCharacter === '"'
+        ) {
+
+          cell += '"';
+
+          index++;
+
+        } else if (
+          character === '"'
+        ) {
+
+          insideQuotes =
+            !insideQuotes;
+
+        } else if (
+          character === "," &&
+          !insideQuotes
+        ) {
+
+          row.push(cell);
+
+          cell = "";
+
+        } else if (
+          (
+            character === "\n" ||
+            character === "\r"
+          ) &&
+          !insideQuotes
+        ) {
+
+          if (
+            character === "\r" &&
+            nextCharacter === "\n"
+          ) {
+            index++;
+          }
+
+          row.push(cell);
+
+          if (
+            row.some(
+              value =>
+                value.trim() !== ""
+            )
+          ) {
+            rows.push(row);
+          }
+
+          row = [];
+
+          cell = "";
+
+        } else {
+
+          cell += character;
+
+        }
+
+      }
+
+      if (
+        cell !== "" ||
+        row.length > 0
+      ) {
+
+        row.push(cell);
+
+        rows.push(row);
+
+      }
+
+      return rows;
+
+    }
+
+    function openModal() {
+
+      modalOverlay.classList.add(
+        "open"
+      );
+
+      document.body.style.overflow =
+        "hidden";
+
+    }
+
+    function closeModal() {
+
+      modalOverlay.classList.remove(
+        "open"
+      );
+
+      document.body.style.overflow =
+        "";
+
+    }
+
+    function showError(text) {
+
+      message.classList.add(
+        "error"
+      );
+
+      message.textContent =
+        text;
+
+    }
+
+    function escapeHTML(value) {
+
+      return String(value || "")
+        .replaceAll(
+          "&",
+          "&amp;"
+        )
+        .replaceAll(
+          "<",
+          "&lt;"
+        )
+        .replaceAll(
+          ">",
+          "&gt;"
+        )
+        .replaceAll(
+          '"',
+          "&quot;"
+        )
+        .replaceAll(
+          "'",
+          "&#039;"
+        );
+
+    }
+
+  </script>
+
+</body>
+</html>
