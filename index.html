@@ -18,7 +18,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       background: #f2f0eb;
       color: #1d1d1d;
     }
@@ -35,9 +35,9 @@
     }
 
     .hero {
-      background: #171717;
-      color: white;
       padding: 35px;
+      background: #171717;
+      color: #ffffff;
       border-radius: 22px;
       box-shadow: 0 15px 40px rgba(0, 0, 0, 0.18);
     }
@@ -90,9 +90,18 @@
       border: 0;
       border-radius: 14px;
       background: #b38b3d;
-      color: white;
+      color: #ffffff;
       font-weight: bold;
       cursor: pointer;
+    }
+
+    .search-button:hover {
+      background: #9e782f;
+    }
+
+    .search-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .message {
@@ -104,6 +113,10 @@
 
     .message.error {
       color: #ffaaa5;
+    }
+
+    .message.success {
+      color: #a9e8bb;
     }
 
     .section {
@@ -123,20 +136,20 @@
     }
 
     .vehicle-count {
-      color: #777;
+      color: #777777;
       font-size: 14px;
     }
 
     .table-wrapper {
       overflow-x: auto;
-      background: white;
+      background: #ffffff;
       border-radius: 18px;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
     }
 
     table {
       width: 100%;
-      min-width: 850px;
+      min-width: 900px;
       border-collapse: collapse;
     }
 
@@ -145,11 +158,12 @@
       padding: 15px 17px;
       border-bottom: 1px solid #e8e4dc;
       text-align: left;
+      vertical-align: middle;
     }
 
     th {
       background: #f6f3ed;
-      color: #555;
+      color: #555555;
       font-size: 12px;
       text-transform: uppercase;
     }
@@ -158,12 +172,17 @@
       background: #faf8f4;
     }
 
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
     .vehicle-name-button {
       padding: 0;
       border: 0;
       background: transparent;
       color: #1d1d1d;
       font-weight: bold;
+      text-align: left;
       text-decoration: underline;
       text-decoration-color: #b38b3d;
       text-underline-offset: 4px;
@@ -176,6 +195,7 @@
       border-radius: 20px;
       font-size: 12px;
       font-weight: bold;
+      white-space: nowrap;
     }
 
     .green {
@@ -198,6 +218,12 @@
       color: #555555;
     }
 
+    .empty-row {
+      padding: 30px;
+      color: #777777;
+      text-align: center;
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -218,7 +244,7 @@
       width: min(620px, 100%);
       max-height: 88vh;
       overflow-y: auto;
-      background: white;
+      background: #ffffff;
       border-radius: 22px;
       box-shadow: 0 25px 75px rgba(0, 0, 0, 0.4);
     }
@@ -251,6 +277,10 @@
     .modal-header h2 {
       margin: 0;
       font-size: 28px;
+    }
+
+    .modal-header p {
+      margin: 10px 0 0;
     }
 
     .modal-body {
@@ -288,8 +318,12 @@
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
 
+    .detail-row:last-child {
+      border-bottom: 0;
+    }
+
     .detail-label {
-      color: #666;
+      color: #666666;
       font-size: 13px;
       font-weight: bold;
       text-transform: uppercase;
@@ -317,7 +351,7 @@
       padding: 16px;
       border: 1px solid #d7d2c9;
       border-radius: 14px;
-      background: white;
+      background: #ffffff;
       text-align: left;
       cursor: pointer;
     }
@@ -336,7 +370,7 @@
     .choice-plate {
       display: block;
       margin-top: 5px;
-      color: #666;
+      color: #666666;
       font-size: 14px;
     }
 
@@ -402,6 +436,7 @@
           id="searchButton"
           class="search-button"
           type="button"
+          disabled
         >
           Cerca
         </button>
@@ -432,7 +467,6 @@
         <table>
 
           <thead>
-
             <tr>
               <th>Nome</th>
               <th>Targa</th>
@@ -442,10 +476,15 @@
               <th>Area B &amp; C</th>
               <th>Stato</th>
             </tr>
-
           </thead>
 
-          <tbody id="vehicleTableBody"></tbody>
+          <tbody id="vehicleTableBody">
+            <tr>
+              <td colspan="7" class="empty-row">
+                Caricamento dati...
+              </td>
+            </tr>
+          </tbody>
 
         </table>
 
@@ -469,6 +508,7 @@
         id="closeModalButton"
         class="close-button"
         type="button"
+        aria-label="Chiudi"
       >
         ×
       </button>
@@ -480,13 +520,8 @@
   </div>
 
   <script>
-
-   const SHEET_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT8TlSxIhvznxeUk6AUEDFHQcChXbhUnUYYxU3Ghz5eYr8kIZrDID4EsYl4jw0oWbYMjTVjjmjmec22/pub?gid=0&single=true&output=csv";
-    /*
-      Una scadenza viene considerata vicina
-      quando mancano 30 giorni o meno.
-    */
+    const SHEET_CSV_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT8TlSxIhvznxeUk6AUEDFHQcChXbhUnUYYxU3Ghz5eYr8kIZrDID4EsYl4jw0oWbYMjTVjjmjmec22/pub?output=csv";
 
     const WARNING_DAYS = 30;
 
@@ -519,7 +554,10 @@
     const closeModalButton =
       document.getElementById("closeModalButton");
 
-    loadVehicles();
+    window.addEventListener(
+      "load",
+      loadVehicles
+    );
 
     searchButton.addEventListener(
       "click",
@@ -528,12 +566,10 @@
 
     searchInput.addEventListener(
       "keydown",
-      event => {
-
+      function (event) {
         if (event.key === "Enter") {
           runSearch();
         }
-
       }
     );
 
@@ -544,100 +580,145 @@
 
     modalOverlay.addEventListener(
       "click",
-      event => {
-
+      function (event) {
         if (event.target === modalOverlay) {
           closeModal();
         }
+      }
+    );
 
+    document.addEventListener(
+      "keydown",
+      function (event) {
+        if (event.key === "Escape") {
+          closeModal();
+        }
       }
     );
 
     async function loadVehicles() {
+      message.className = "message";
+      message.textContent = "Caricamento veicoli...";
+
+      searchButton.disabled = true;
 
       try {
-
-        const response =
-          await fetch(SHEET_CSV_URL);
+        const response = await fetch(
+          SHEET_CSV_URL,
+          {
+            cache: "no-store"
+          }
+        );
 
         if (!response.ok) {
           throw new Error(
-            "Errore durante il caricamento."
+            "Risposta Google Sheets non valida: " +
+            response.status
           );
         }
 
-        const csvText =
-          await response.text();
+        const csvText = await response.text();
 
-        const rows =
-          parseCSV(csvText);
+        if (
+          !csvText ||
+          csvText.trim().startsWith("<!DOCTYPE") ||
+          csvText.trim().startsWith("<html")
+        ) {
+          throw new Error(
+            "Google Sheets ha restituito una pagina HTML invece del CSV."
+          );
+        }
+
+        const rows = parseCSV(csvText);
 
         if (rows.length < 2) {
           throw new Error(
-            "Il foglio non contiene dati."
+            "Il foglio non contiene righe di dati."
           );
         }
 
-        const headers =
-          rows[0].map(
-            header => header.trim()
-          );
+        const headers = rows[0].map(
+          function (header) {
+            return cleanHeader(header);
+          }
+        );
+
+        console.log("Intestazioni trovate:", headers);
 
         vehicles = rows
           .slice(1)
           .filter(
-            row =>
-              row.some(
-                cell => cell.trim() !== ""
-              )
+            function (row) {
+              return row.some(
+                function (cell) {
+                  return String(cell || "").trim() !== "";
+                }
+              );
+            }
           )
-          .map(row => {
+          .map(
+            function (row) {
+              const vehicle = {};
 
-            const vehicle = {};
+              headers.forEach(
+                function (header, index) {
+                  vehicle[header] =
+                    String(row[index] || "").trim();
+                }
+              );
 
-            headers.forEach(
-              (header, index) => {
+              return vehicle;
+            }
+          );
 
-                vehicle[header] =
-                  row[index]?.trim() || "";
-
-              }
-            );
-
-            return vehicle;
-
-          });
+        if (vehicles.length === 0) {
+          throw new Error(
+            "Non sono stati trovati veicoli nel foglio."
+          );
+        }
 
         renderTable();
 
-        message.classList.remove("error");
+        searchButton.disabled = false;
 
+        message.className = "message success";
         message.textContent =
-          `${vehicles.length} veicoli caricati.`;
+          vehicles.length + " veicoli caricati.";
 
       } catch (error) {
+        console.error(
+          "Errore caricamento veicoli:",
+          error
+        );
 
-        console.error(error);
+        vehicles = [];
 
-        message.classList.add("error");
+        searchButton.disabled = true;
 
+        vehicleCount.textContent = "0 veicoli";
+
+        vehicleTableBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-row">
+              Impossibile caricare la lista dei veicoli.
+            </td>
+          </tr>
+        `;
+
+        message.className = "message error";
         message.textContent =
-          "Errore nel caricamento. Controlla il link CSV.";
-
+          "Errore nel caricamento dei dati. Controlla che il foglio sia pubblicato.";
       }
-
     }
 
     function renderTable() {
-
       vehicleTableBody.innerHTML = "";
 
       vehicleCount.textContent =
-        `${vehicles.length} veicoli`;
+        vehicles.length + " veicoli";
 
       vehicles.forEach(
-        (vehicle, index) => {
-
+        function (vehicle, index) {
           const status =
             getOverallStatus(vehicle);
 
@@ -651,29 +732,37 @@
                 type="button"
                 data-index="${index}"
               >
-                ${escapeHTML(vehicle.Nome)}
+                ${escapeHTML(getValue(vehicle, "Nome"))}
               </button>
             </td>
 
             <td>
-              ${escapeHTML(vehicle.Targa || "—")}
-            </td>
-
-            <td>
-              ${escapeHTML(vehicle.Assicurazione || "—")}
-            </td>
-
-            <td>
-              ${escapeHTML(vehicle.Revisione || "—")}
-            </td>
-
-            <td>
-              ${escapeHTML(vehicle.Documento || "—")}
+              ${escapeHTML(
+                getValue(vehicle, "Targa") || "—"
+              )}
             </td>
 
             <td>
               ${escapeHTML(
-                vehicle["Area B & C"] || "—"
+                getValue(vehicle, "Assicurazione") || "—"
+              )}
+            </td>
+
+            <td>
+              ${escapeHTML(
+                getValue(vehicle, "Revisione") || "—"
+              )}
+            </td>
+
+            <td>
+              ${escapeHTML(
+                getValue(vehicle, "Documento") || "—"
+              )}
+            </td>
+
+            <td>
+              ${escapeHTML(
+                getAreaValue(vehicle) || "—"
               )}
             </td>
 
@@ -687,118 +776,106 @@
           `;
 
           vehicleTableBody.appendChild(row);
-
         }
       );
 
-      document
-        .querySelectorAll(
+      const buttons =
+        document.querySelectorAll(
           ".vehicle-name-button"
-        )
-        .forEach(button => {
+        );
 
+      buttons.forEach(
+        function (button) {
           button.addEventListener(
             "click",
-            () => {
-
+            function () {
               const index =
                 Number(button.dataset.index);
 
               showVehicleDetails(
                 vehicles[index]
               );
-
             }
           );
-
-        });
-
+        }
+      );
     }
 
     function runSearch() {
+      if (vehicles.length === 0) {
+        showError(
+          "La lista dei veicoli non è ancora disponibile."
+        );
+
+        return;
+      }
 
       const query =
         normalizeText(searchInput.value);
 
       if (!query) {
-
         showError(
           "Scrivi il nome o la targa del veicolo."
         );
 
         return;
-
       }
 
-      const results =
-        vehicles.filter(vehicle => {
+      const results = vehicles.filter(
+        function (vehicle) {
+          const name = normalizeText(
+            getValue(vehicle, "Nome")
+          );
 
-          const name =
-            normalizeText(vehicle.Nome);
-
-          const plate =
-            normalizeText(vehicle.Targa);
+          const plate = normalizeText(
+            getValue(vehicle, "Targa")
+          );
 
           return (
             name.includes(query) ||
             plate.includes(query)
           );
-
-        });
+        }
+      );
 
       if (results.length === 0) {
-
         showError(
           "Nessun veicolo trovato."
         );
 
         return;
-
       }
 
-      message.classList.remove("error");
-
+      message.className = "message success";
       message.textContent =
-        `${results.length} risultati trovati.`;
+        results.length === 1
+          ? "1 veicolo trovato."
+          : results.length + " veicoli trovati.";
 
       if (results.length === 1) {
-
-        showVehicleDetails(
-          results[0]
-        );
-
+        showVehicleDetails(results[0]);
       } else {
-
-        showVehicleChoice(
-          results
-        );
-
+        showVehicleChoice(results);
       }
-
     }
 
     function showVehicleChoice(results) {
-
       modalContainer.className = "modal";
 
       modalContent.innerHTML = `
         <div class="modal-header">
-
           <h2>Scegli il veicolo</h2>
 
           <p>
             Sono stati trovati più risultati.
           </p>
-
         </div>
 
         <div class="modal-body">
-
           <div
             id="choiceList"
             class="choice-list"
           ></div>
-
         </div>
       `;
 
@@ -807,69 +884,69 @@
           "choiceList"
         );
 
-      results.forEach(vehicle => {
+      results.forEach(
+        function (vehicle) {
+          const button =
+            document.createElement("button");
 
-        const button =
-          document.createElement("button");
+          button.type = "button";
+          button.className = "choice-button";
 
-        button.type = "button";
+          button.innerHTML = `
+            <span class="choice-name">
+              ${escapeHTML(
+                getValue(vehicle, "Nome")
+              )}
+            </span>
 
-        button.className =
-          "choice-button";
+            <span class="choice-plate">
+              Targa:
+              ${escapeHTML(
+                getValue(vehicle, "Targa") ||
+                "non disponibile"
+              )}
+            </span>
+          `;
 
-        button.innerHTML = `
-          <span class="choice-name">
-            ${escapeHTML(vehicle.Nome)}
-          </span>
+          button.addEventListener(
+            "click",
+            function () {
+              showVehicleDetails(vehicle);
+            }
+          );
 
-          <span class="choice-plate">
-            Targa:
-            ${escapeHTML(
-              vehicle.Targa || "non disponibile"
-            )}
-          </span>
-        `;
-
-        button.addEventListener(
-          "click",
-          () => {
-
-            showVehicleDetails(vehicle);
-
-          }
-        );
-
-        choiceList.appendChild(button);
-
-      });
+          choiceList.appendChild(button);
+        }
+      );
 
       openModal();
-
     }
 
     function showVehicleDetails(vehicle) {
+      const insurance =
+        getValue(vehicle, "Assicurazione");
+
+      const inspection =
+        getValue(vehicle, "Revisione");
+
+      const insuranceStatus =
+        evaluateDate(insurance);
+
+      const inspectionStatus =
+        evaluateDate(inspection);
 
       const overallStatus =
         getOverallStatus(vehicle);
 
-      const insuranceStatus =
-        evaluateDate(
-          vehicle.Assicurazione
-        );
-
-      const inspectionStatus =
-        evaluateDate(
-          vehicle.Revisione
-        );
-
       modalContainer.className =
-        `modal ${overallStatus.popupClass}`;
+        "modal " + overallStatus.popupClass;
 
       modalContent.innerHTML = `
         <div class="modal-header">
-
           <h2>
-            ${escapeHTML(vehicle.Nome)}
+            ${escapeHTML(
+              getValue(vehicle, "Nome")
+            )}
           </h2>
 
           <span class="overall-status">
@@ -877,61 +954,58 @@
               overallStatus.fullLabel
             )}
           </span>
-
         </div>
 
         <div class="modal-body">
 
           ${createDetailRow(
             "Nome",
-            vehicle.Nome
+            getValue(vehicle, "Nome")
           )}
 
           ${createDetailRow(
             "Targa",
-            vehicle.Targa
+            getValue(vehicle, "Targa")
           )}
 
           ${createDetailRow(
             "Assicurazione",
-            vehicle.Assicurazione,
+            insurance,
             insuranceStatus.description
           )}
 
           ${createDetailRow(
             "Revisione",
-            vehicle.Revisione,
+            inspection,
             inspectionStatus.description
           )}
 
           ${createDetailRow(
             "Documento",
-            vehicle.Documento
+            getValue(vehicle, "Documento")
           )}
 
           ${createDetailRow(
             "Area B & C",
-            vehicle["Area B & C"]
+            getAreaValue(vehicle)
           )}
 
           ${createDetailRow(
             "Note",
-            vehicle.Note
+            getValue(vehicle, "Note")
           )}
 
         </div>
       `;
 
       openModal();
-
     }
 
     function createDetailRow(
       label,
       value,
-      note = ""
+      note
     ) {
-
       if (!value) {
         return "";
       }
@@ -944,7 +1018,6 @@
           </div>
 
           <div class="detail-value">
-
             ${escapeHTML(value)}
 
             ${
@@ -956,24 +1029,21 @@
                 `
                 : ""
             }
-
           </div>
 
         </div>
       `;
-
     }
 
     function getOverallStatus(vehicle) {
-
       const insuranceStatus =
         evaluateDate(
-          vehicle.Assicurazione
+          getValue(vehicle, "Assicurazione")
         );
 
       const inspectionStatus =
         evaluateDate(
-          vehicle.Revisione
+          getValue(vehicle, "Revisione")
         );
 
       const statuses = [
@@ -983,11 +1053,11 @@
 
       if (
         statuses.some(
-          status =>
-            status.level === "red"
+          function (status) {
+            return status.level === "red";
+          }
         )
       ) {
-
         return {
           level: "red",
           popupClass: "red-popup",
@@ -995,16 +1065,15 @@
           fullLabel:
             "Almeno una scadenza è superata"
         };
-
       }
 
       if (
         statuses.some(
-          status =>
-            status.level === "yellow"
+          function (status) {
+            return status.level === "yellow";
+          }
         )
       ) {
-
         return {
           level: "yellow",
           popupClass: "yellow-popup",
@@ -1012,16 +1081,15 @@
           fullLabel:
             "Almeno una scadenza è vicina"
         };
-
       }
 
       if (
         statuses.every(
-          status =>
-            status.level === "green"
+          function (status) {
+            return status.level === "green";
+          }
         )
       ) {
-
         return {
           level: "green",
           popupClass: "green-popup",
@@ -1029,7 +1097,6 @@
           fullLabel:
             "Assicurazione e revisione regolari"
         };
-
       }
 
       return {
@@ -1039,40 +1106,24 @@
         fullLabel:
           "Dati di scadenza da verificare"
       };
-
     }
 
     function evaluateDate(rawDate) {
-
       const date =
         parseDate(rawDate);
 
       if (!date) {
-
         return {
           level: "neutral",
           description:
-            "Data non riconosciuta."
+            "Data non disponibile o non riconosciuta."
         };
-
       }
 
-      const today =
-        new Date();
+      const today = new Date();
 
-      today.setHours(
-        0,
-        0,
-        0,
-        0
-      );
-
-      date.setHours(
-        0,
-        0,
-        0,
-        0
-      );
+      today.setHours(0, 0, 0, 0);
+      date.setHours(0, 0, 0, 0);
 
       const differenceInDays =
         Math.ceil(
@@ -1084,42 +1135,39 @@
         );
 
       if (differenceInDays < 0) {
-
         return {
           level: "red",
           description:
-            `Scaduta da ${Math.abs(
-              differenceInDays
-            )} giorni.`
+            "Scaduta da " +
+            Math.abs(differenceInDays) +
+            " giorni."
         };
-
       }
 
       if (
-        differenceInDays <=
-        WARNING_DAYS
+        differenceInDays <= WARNING_DAYS
       ) {
-
         return {
           level: "yellow",
           description:
             differenceInDays === 0
               ? "Scade oggi."
-              : `Scade tra ${differenceInDays} giorni.`
+              : "Scade tra " +
+                differenceInDays +
+                " giorni."
         };
-
       }
 
       return {
         level: "green",
         description:
-          `Regolare. Mancano ${differenceInDays} giorni.`
+          "Regolare. Mancano " +
+          differenceInDays +
+          " giorni."
       };
-
     }
 
     function parseDate(value) {
-
       if (!value) {
         return null;
       }
@@ -1127,45 +1175,110 @@
       const text =
         String(value).trim();
 
-      const match =
+      const italianMatch =
         text.match(
           /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/
         );
 
-      if (!match) {
-        return null;
+      if (italianMatch) {
+        const day =
+          Number(italianMatch[1]);
+
+        const month =
+          Number(italianMatch[2]);
+
+        const year =
+          Number(italianMatch[3]);
+
+        const date =
+          new Date(
+            year,
+            month - 1,
+            day
+          );
+
+        if (
+          date.getFullYear() === year &&
+          date.getMonth() === month - 1 &&
+          date.getDate() === day
+        ) {
+          return date;
+        }
       }
 
-      const day =
-        Number(match[1]);
-
-      const month =
-        Number(match[2]);
-
-      const year =
-        Number(match[3]);
-
-      const date =
-        new Date(
-          year,
-          month - 1,
-          day
-        );
+      const automaticDate =
+        new Date(text);
 
       if (
-        date.getFullYear() !== year ||
-        date.getMonth() !== month - 1 ||
-        date.getDate() !== day
+        !Number.isNaN(
+          automaticDate.getTime()
+        )
       ) {
-        return null;
+        return automaticDate;
       }
 
-      return date;
+      return null;
+    }
 
+    function getValue(vehicle, requestedKey) {
+      const normalizedRequestedKey =
+        normalizeHeader(requestedKey);
+
+      const realKey = Object.keys(
+        vehicle
+      ).find(
+        function (key) {
+          return (
+            normalizeHeader(key) ===
+            normalizedRequestedKey
+          );
+        }
+      );
+
+      return realKey
+        ? vehicle[realKey]
+        : "";
+    }
+
+    function getAreaValue(vehicle) {
+      const possibleNames = [
+        "Area B & C",
+        "Area B&C",
+        "Area B e C",
+        "Area B C"
+      ];
+
+      for (
+        let index = 0;
+        index < possibleNames.length;
+        index++
+      ) {
+        const value =
+          getValue(
+            vehicle,
+            possibleNames[index]
+          );
+
+        if (value) {
+          return value;
+        }
+      }
+
+      return "";
+    }
+
+    function cleanHeader(value) {
+      return String(value || "")
+        .replace(/^\uFEFF/, "")
+        .trim();
+    }
+
+    function normalizeHeader(value) {
+      return normalizeText(value)
+        .replace(/\s+/g, "");
     }
 
     function normalizeText(value) {
-
       return String(value || "")
         .normalize("NFD")
         .replace(
@@ -1182,17 +1295,13 @@
           " "
         )
         .trim();
-
     }
 
     function parseCSV(csvText) {
-
       const rows = [];
 
       let row = [];
-
       let cell = "";
-
       let insideQuotes = false;
 
       for (
@@ -1200,7 +1309,6 @@
         index < csvText.length;
         index++
       ) {
-
         const character =
           csvText[index];
 
@@ -1212,27 +1320,18 @@
           insideQuotes &&
           nextCharacter === '"'
         ) {
-
           cell += '"';
-
           index++;
-
         } else if (
           character === '"'
         ) {
-
-          insideQuotes =
-            !insideQuotes;
-
+          insideQuotes = !insideQuotes;
         } else if (
           character === "," &&
           !insideQuotes
         ) {
-
           row.push(cell);
-
           cell = "";
-
         } else if (
           (
             character === "\n" ||
@@ -1240,7 +1339,6 @@
           ) &&
           !insideQuotes
         ) {
-
           if (
             character === "\r" &&
             nextCharacter === "\n"
@@ -1252,99 +1350,68 @@
 
           if (
             row.some(
-              value =>
-                value.trim() !== ""
+              function (value) {
+                return (
+                  String(value || "").trim() !== ""
+                );
+              }
             )
           ) {
             rows.push(row);
           }
 
           row = [];
-
           cell = "";
-
         } else {
-
           cell += character;
-
         }
-
       }
 
       if (
         cell !== "" ||
         row.length > 0
       ) {
-
         row.push(cell);
-
         rows.push(row);
-
       }
 
       return rows;
-
     }
 
     function openModal() {
-
       modalOverlay.classList.add(
         "open"
       );
 
       document.body.style.overflow =
         "hidden";
-
     }
 
     function closeModal() {
-
       modalOverlay.classList.remove(
         "open"
       );
 
       document.body.style.overflow =
         "";
-
     }
 
     function showError(text) {
-
-      message.classList.add(
-        "error"
-      );
+      message.className =
+        "message error";
 
       message.textContent =
         text;
-
     }
 
     function escapeHTML(value) {
-
       return String(value || "")
-        .replaceAll(
-          "&",
-          "&amp;"
-        )
-        .replaceAll(
-          "<",
-          "&lt;"
-        )
-        .replaceAll(
-          ">",
-          "&gt;"
-        )
-        .replaceAll(
-          '"',
-          "&quot;"
-        )
-        .replaceAll(
-          "'",
-          "&#039;"
-        );
-
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
-
   </script>
 
 </body>
