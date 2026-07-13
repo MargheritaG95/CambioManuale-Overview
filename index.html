@@ -481,18 +481,8 @@
 
   <script>
 
-    /*
-      INCOLLA QUI IL LINK CSV DEL GOOGLE SHEET.
-
-      Esempio:
-
-      const SHEET_CSV_URL =
-        "https://docs.google.com/spreadsheets/d/e/XXXX/pub?output=csv";
-    */
-
-    const SHEET_CSV_URL =
-        "https://docs.google.com/spreadsheets/d/e/2PACX-1vT8TlSxIhvznxeUk6AUEDFHQcChXbhUnUYYxU3Ghz5eYr8kIZrDID4EsYl4jw0oWbYMjTVjjmjmec22/pub?gid=0&single=true&output=csv";
-
+   const SHEET_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT8TlSxIhvznxeUk6AUEDFHQcChXbhUnUYYxU3Ghz5eYr8kIZrDID4EsYl4jw0oWbYMjTVjjmjmec22/pub?gid=0&single=true&output=csv";
     /*
       Una scadenza viene considerata vicina
       quando mancano 30 giorni o meno.
@@ -529,10 +519,7 @@
     const closeModalButton =
       document.getElementById("closeModalButton");
 
-    document.addEventListener(
-      "DOMContentLoaded",
-      loadVehicles
-    );
+    loadVehicles();
 
     searchButton.addEventListener(
       "click",
