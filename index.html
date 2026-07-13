@@ -189,6 +189,28 @@
       cursor: pointer;
     }
 
+    .date-text {
+      font-size: 13px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .date-text.green {
+      color: #17833c;
+    }
+
+    .date-text.yellow {
+      color: #d27a00;
+    }
+
+    .date-text.red {
+      color: #c62828;
+    }
+
+    .date-text.neutral {
+      color: #777777;
+    }
+
     .status-pill {
       display: inline-block;
       padding: 7px 11px;
@@ -198,51 +220,24 @@
       white-space: nowrap;
     }
 
-    .date-badge {
-      display: inline-block;
-      min-width: 105px;
-      padding: 7px 10px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: bold;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .green {
+    .status-pill.green {
       background: #dff3e5;
       color: #176332;
     }
 
-    .yellow {
-      background: #ffe5b5;
-      color: #8a4b00;
+    .status-pill.yellow {
+      background: #fff0b8;
+      color: #775500;
     }
 
-    .red {
+    .status-pill.red {
       background: #ffd9d6;
       color: #91231e;
     }
 
-    .neutral {
+    .status-pill.neutral {
       background: #eeeeee;
       color: #555555;
-    }
-
-    .date-badge.green {
-      border: 1px solid #abd9b8;
-    }
-
-    .date-badge.yellow {
-      border: 1px solid #e5b65f;
-    }
-
-    .date-badge.red {
-      border: 1px solid #e5a19c;
-    }
-
-    .date-badge.neutral {
-      border: 1px solid #cccccc;
     }
 
     .empty-row {
@@ -259,7 +254,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.72);
       backdrop-filter: blur(4px);
     }
 
@@ -279,22 +274,22 @@
     }
 
     .modal.green-popup {
-      background: #e4f5e9;
+      background: #eff8f1;
       border: 4px solid #3d9158;
     }
 
     .modal.yellow-popup {
-      background: #fff3c5;
+      background: #fff9e5;
       border: 4px solid #d49a18;
     }
 
     .modal.red-popup {
-      background: #fde4e2;
+      background: #fff0ef;
       border: 4px solid #c94c45;
     }
 
     .modal.neutral-popup {
-      background: #eeeeee;
+      background: #f2f2f2;
       border: 4px solid #888888;
     }
 
@@ -327,7 +322,7 @@
 
     .vehicle-popup-subtitle {
       margin: 7px 0 0;
-      opacity: 0.85;
+      opacity: 0.9;
       font-size: 14px;
     }
 
@@ -404,7 +399,7 @@
       padding: 16px;
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 14px;
-      background: rgba(255, 255, 255, 0.84);
+      background: rgba(255, 255, 255, 0.88);
     }
 
     .detail-label {
@@ -426,10 +421,25 @@
     .date-note {
       display: block;
       margin-top: 7px;
-      color: #555555;
       font-size: 12px;
-      font-weight: normal;
+      font-weight: bold;
       line-height: 1.4;
+    }
+
+    .date-note.green {
+      color: #17833c;
+    }
+
+    .date-note.yellow {
+      color: #d27a00;
+    }
+
+    .date-note.red {
+      color: #c62828;
+    }
+
+    .date-note.neutral {
+      color: #777777;
     }
 
     .choice-list {
@@ -700,7 +710,8 @@
 
     async function loadVehicles() {
       message.className = "message";
-      message.textContent = "Caricamento veicoli...";
+      message.textContent =
+        "Caricamento veicoli...";
 
       searchButton.disabled = true;
 
@@ -719,7 +730,8 @@
           );
         }
 
-        const csvText = await response.text();
+        const csvText =
+          await response.text();
 
         if (
           !csvText ||
@@ -727,11 +739,12 @@
           csvText.trim().startsWith("<html")
         ) {
           throw new Error(
-            "Google Sheets ha restituito una pagina HTML invece del CSV."
+            "Google Sheets ha restituito HTML invece del CSV."
           );
         }
 
-        const rows = parseCSV(csvText);
+        const rows =
+          parseCSV(csvText);
 
         if (rows.length < 2) {
           throw new Error(
@@ -739,11 +752,12 @@
           );
         }
 
-        const headers = rows[0].map(
-          function (header) {
-            return cleanHeader(header);
-          }
-        );
+        const headers =
+          rows[0].map(
+            function (header) {
+              return cleanHeader(header);
+            }
+          );
 
         vehicles = rows
           .slice(1)
@@ -751,7 +765,9 @@
             function (row) {
               return row.some(
                 function (cell) {
-                  return String(cell || "").trim() !== "";
+                  return (
+                    String(cell || "").trim() !== ""
+                  );
                 }
               );
             }
@@ -763,7 +779,9 @@
               headers.forEach(
                 function (header, index) {
                   vehicle[header] =
-                    String(row[index] || "").trim();
+                    String(
+                      row[index] || ""
+                    ).trim();
                 }
               );
 
@@ -773,7 +791,7 @@
 
         if (vehicles.length === 0) {
           throw new Error(
-            "Non sono stati trovati veicoli nel foglio."
+            "Non sono stati trovati veicoli."
           );
         }
 
@@ -781,9 +799,12 @@
 
         searchButton.disabled = false;
 
-        message.className = "message success";
+        message.className =
+          "message success";
+
         message.textContent =
-          vehicles.length + " veicoli caricati.";
+          vehicles.length +
+          " veicoli caricati.";
 
       } catch (error) {
         console.error(
@@ -795,7 +816,8 @@
 
         searchButton.disabled = true;
 
-        vehicleCount.textContent = "0 veicoli";
+        vehicleCount.textContent =
+          "0 veicoli";
 
         vehicleTableBody.innerHTML = `
           <tr>
@@ -805,7 +827,9 @@
           </tr>
         `;
 
-        message.className = "message error";
+        message.className =
+          "message error";
+
         message.textContent =
           "Errore nel caricamento dei dati. Controlla che il foglio sia pubblicato.";
       }
@@ -823,10 +847,16 @@
             getOverallStatus(vehicle);
 
           const insuranceDate =
-            getValue(vehicle, "Assicurazione");
+            getValue(
+              vehicle,
+              "Assicurazione"
+            );
 
           const inspectionDate =
-            getValue(vehicle, "Revisione");
+            getValue(
+              vehicle,
+              "Revisione"
+            );
 
           const insuranceStatus =
             evaluateDate(insuranceDate);
@@ -844,41 +874,52 @@
                 type="button"
                 data-index="${index}"
               >
-                ${escapeHTML(getValue(vehicle, "Nome"))}
+                ${escapeHTML(
+                  getValue(vehicle, "Nome")
+                )}
               </button>
             </td>
 
             <td>
               ${escapeHTML(
-                getValue(vehicle, "Targa") || "—"
+                getValue(vehicle, "Targa") ||
+                "—"
               )}
             </td>
 
             <td>
               <span
-                class="date-badge ${insuranceStatus.level}"
+                class="date-text ${insuranceStatus.level}"
               >
-                ${escapeHTML(insuranceDate || "—")}
+                ${escapeHTML(
+                  insuranceDate || "—"
+                )}
               </span>
             </td>
 
             <td>
               <span
-                class="date-badge ${inspectionStatus.level}"
+                class="date-text ${inspectionStatus.level}"
               >
-                ${escapeHTML(inspectionDate || "—")}
+                ${escapeHTML(
+                  inspectionDate || "—"
+                )}
               </span>
             </td>
 
             <td>
               ${escapeHTML(
-                getValue(vehicle, "Documento") || "—"
+                getValue(
+                  vehicle,
+                  "Documento"
+                ) || "—"
               )}
             </td>
 
             <td>
               ${escapeHTML(
-                getAreaValue(vehicle) || "—"
+                getAreaValue(vehicle) ||
+                "—"
               )}
             </td>
 
@@ -886,12 +927,16 @@
               <span
                 class="status-pill ${overallStatus.level}"
               >
-                ${escapeHTML(overallStatus.shortLabel)}
+                ${escapeHTML(
+                  overallStatus.shortLabel
+                )}
               </span>
             </td>
           `;
 
-          vehicleTableBody.appendChild(row);
+          vehicleTableBody.appendChild(
+            row
+          );
         }
       );
 
@@ -906,7 +951,9 @@
             "click",
             function () {
               const index =
-                Number(button.dataset.index);
+                Number(
+                  button.dataset.index
+                );
 
               showVehicleDetails(
                 vehicles[index]
@@ -927,7 +974,9 @@
       }
 
       const query =
-        normalizeText(searchInput.value);
+        normalizeText(
+          searchInput.value
+        );
 
       if (!query) {
         showError(
@@ -937,22 +986,31 @@
         return;
       }
 
-      const results = vehicles.filter(
-        function (vehicle) {
-          const name = normalizeText(
-            getValue(vehicle, "Nome")
-          );
+      const results =
+        vehicles.filter(
+          function (vehicle) {
+            const name =
+              normalizeText(
+                getValue(
+                  vehicle,
+                  "Nome"
+                )
+              );
 
-          const plate = normalizeText(
-            getValue(vehicle, "Targa")
-          );
+            const plate =
+              normalizeText(
+                getValue(
+                  vehicle,
+                  "Targa"
+                )
+              );
 
-          return (
-            name.includes(query) ||
-            plate.includes(query)
-          );
-        }
-      );
+            return (
+              name.includes(query) ||
+              plate.includes(query)
+            );
+          }
+        );
 
       if (results.length === 0) {
         showError(
@@ -962,21 +1020,35 @@
         return;
       }
 
-      message.className = "message success";
+      message.className =
+        "message success";
+
       message.textContent =
         results.length === 1
           ? "1 veicolo trovato."
-          : results.length + " veicoli trovati.";
+          : results.length +
+            " veicoli trovati.";
 
       if (results.length === 1) {
-        showVehicleDetails(results[0]);
+        showVehicleDetails(
+          results[0]
+        );
       } else {
-        showVehicleChoice(results);
+        showVehicleChoice(
+          results
+        );
       }
     }
 
     function showVehicleChoice(results) {
-      modalContainer.className = "modal";
+      modalContainer.className =
+        "modal";
+
+      closeModalButton.style.color =
+        "#1d1d1d";
+
+      closeModalButton.style.background =
+        "rgba(0, 0, 0, 0.1)";
 
       modalContent.innerHTML = `
         <div class="modal-header">
@@ -995,10 +1067,6 @@
         </div>
       `;
 
-      closeModalButton.style.color = "#1d1d1d";
-      closeModalButton.style.background =
-        "rgba(0, 0, 0, 0.1)";
-
       const choiceList =
         document.getElementById(
           "choiceList"
@@ -1007,22 +1075,32 @@
       results.forEach(
         function (vehicle) {
           const button =
-            document.createElement("button");
+            document.createElement(
+              "button"
+            );
 
           button.type = "button";
-          button.className = "choice-button";
+
+          button.className =
+            "choice-button";
 
           button.innerHTML = `
             <span class="choice-name">
               ${escapeHTML(
-                getValue(vehicle, "Nome")
+                getValue(
+                  vehicle,
+                  "Nome"
+                )
               )}
             </span>
 
             <span class="choice-plate">
               Targa:
               ${escapeHTML(
-                getValue(vehicle, "Targa") ||
+                getValue(
+                  vehicle,
+                  "Targa"
+                ) ||
                 "non disponibile"
               )}
             </span>
@@ -1031,11 +1109,15 @@
           button.addEventListener(
             "click",
             function () {
-              showVehicleDetails(vehicle);
+              showVehicleDetails(
+                vehicle
+              );
             }
           );
 
-          choiceList.appendChild(button);
+          choiceList.appendChild(
+            button
+          );
         }
       );
 
@@ -1044,10 +1126,16 @@
 
     function showVehicleDetails(vehicle) {
       const insurance =
-        getValue(vehicle, "Assicurazione");
+        getValue(
+          vehicle,
+          "Assicurazione"
+        );
 
       const inspection =
-        getValue(vehicle, "Revisione");
+        getValue(
+          vehicle,
+          "Revisione"
+        );
 
       const insuranceStatus =
         evaluateDate(insurance);
@@ -1068,9 +1156,12 @@
               : "?";
 
       modalContainer.className =
-        "modal " + overallStatus.popupClass;
+        "modal " +
+        overallStatus.popupClass;
 
-      closeModalButton.style.color = "#ffffff";
+      closeModalButton.style.color =
+        "#ffffff";
+
       closeModalButton.style.background =
         "rgba(255, 255, 255, 0.22)";
 
@@ -1079,19 +1170,26 @@
 
           <h2>
             ${escapeHTML(
-              getValue(vehicle, "Nome")
+              getValue(
+                vehicle,
+                "Nome"
+              )
             )}
           </h2>
 
           <p class="vehicle-popup-subtitle">
             Targa:
             ${escapeHTML(
-              getValue(vehicle, "Targa") ||
+              getValue(
+                vehicle,
+                "Targa"
+              ) ||
               "non disponibile"
             )}
           </p>
 
           <div class="vehicle-status-summary">
+
             <span class="status-symbol">
               ${statusSymbol}
             </span>
@@ -1099,6 +1197,7 @@
             ${escapeHTML(
               overallStatus.fullLabel
             )}
+
           </div>
 
         </div>
@@ -1109,24 +1208,32 @@
 
             ${createDetailRow(
               "Targa",
-              getValue(vehicle, "Targa")
+              getValue(
+                vehicle,
+                "Targa"
+              )
             )}
 
             ${createDetailRow(
               "Assicurazione",
               insurance,
-              insuranceStatus.description
+              insuranceStatus.description,
+              insuranceStatus.level
             )}
 
             ${createDetailRow(
               "Revisione",
               inspection,
-              inspectionStatus.description
+              inspectionStatus.description,
+              inspectionStatus.level
             )}
 
             ${createDetailRow(
               "Documento",
-              getValue(vehicle, "Documento")
+              getValue(
+                vehicle,
+                "Documento"
+              )
             )}
 
             ${createDetailRow(
@@ -1136,7 +1243,10 @@
 
             ${createDetailRow(
               "Note",
-              getValue(vehicle, "Note")
+              getValue(
+                vehicle,
+                "Note"
+              )
             )}
 
           </div>
@@ -1150,7 +1260,8 @@
     function createDetailRow(
       label,
       value,
-      note
+      note = "",
+      noteLevel = "neutral"
     ) {
       if (!value) {
         return "";
@@ -1164,17 +1275,21 @@
           </div>
 
           <div class="detail-value">
+
             ${escapeHTML(value)}
 
             ${
               note
                 ? `
-                  <span class="date-note">
+                  <span
+                    class="date-note ${noteLevel}"
+                  >
                     ${escapeHTML(note)}
                   </span>
                 `
                 : ""
             }
+
           </div>
 
         </div>
@@ -1184,12 +1299,18 @@
     function getOverallStatus(vehicle) {
       const insuranceStatus =
         evaluateDate(
-          getValue(vehicle, "Assicurazione")
+          getValue(
+            vehicle,
+            "Assicurazione"
+          )
         );
 
       const inspectionStatus =
         evaluateDate(
-          getValue(vehicle, "Revisione")
+          getValue(
+            vehicle,
+            "Revisione"
+          )
         );
 
       const statuses = [
@@ -1200,7 +1321,9 @@
       if (
         statuses.some(
           function (status) {
-            return status.level === "red";
+            return (
+              status.level === "red"
+            );
           }
         )
       ) {
@@ -1216,7 +1339,9 @@
       if (
         statuses.some(
           function (status) {
-            return status.level === "yellow";
+            return (
+              status.level === "yellow"
+            );
           }
         )
       ) {
@@ -1232,7 +1357,9 @@
       if (
         statuses.every(
           function (status) {
-            return status.level === "green";
+            return (
+              status.level === "green"
+            );
           }
         )
       ) {
@@ -1266,10 +1393,22 @@
         };
       }
 
-      const today = new Date();
+      const today =
+        new Date();
 
-      today.setHours(0, 0, 0, 0);
-      date.setHours(0, 0, 0, 0);
+      today.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+      date.setHours(
+        0,
+        0,
+        0,
+        0
+      );
 
       const differenceInDays =
         Math.ceil(
@@ -1285,20 +1424,23 @@
           level: "red",
           description:
             "Scaduta da " +
-            Math.abs(differenceInDays) +
+            Math.abs(
+              differenceInDays
+            ) +
             " giorni."
         };
       }
 
       if (
-        differenceInDays <= WARNING_DAYS
+        differenceInDays <=
+        WARNING_DAYS
       ) {
         return {
           level: "yellow",
           description:
             differenceInDays === 0
               ? "Scade oggi."
-              : "Scade tra " +
+              : "In scadenza tra " +
                 differenceInDays +
                 " giorni."
         };
@@ -1328,13 +1470,19 @@
 
       if (italianMatch) {
         const day =
-          Number(italianMatch[1]);
+          Number(
+            italianMatch[1]
+          );
 
         const month =
-          Number(italianMatch[2]);
+          Number(
+            italianMatch[2]
+          );
 
         const year =
-          Number(italianMatch[3]);
+          Number(
+            italianMatch[3]
+          );
 
         const date =
           new Date(
@@ -1345,7 +1493,8 @@
 
         if (
           date.getFullYear() === year &&
-          date.getMonth() === month - 1 &&
+          date.getMonth() ===
+            month - 1 &&
           date.getDate() === day
         ) {
           return date;
@@ -1366,20 +1515,26 @@
       return null;
     }
 
-    function getValue(vehicle, requestedKey) {
+    function getValue(
+      vehicle,
+      requestedKey
+    ) {
       const normalizedRequestedKey =
-        normalizeHeader(requestedKey);
+        normalizeHeader(
+          requestedKey
+        );
 
-      const realKey = Object.keys(
-        vehicle
-      ).find(
-        function (key) {
-          return (
-            normalizeHeader(key) ===
-            normalizedRequestedKey
-          );
-        }
-      );
+      const realKey =
+        Object.keys(
+          vehicle
+        ).find(
+          function (key) {
+            return (
+              normalizeHeader(key) ===
+              normalizedRequestedKey
+            );
+          }
+        );
 
       return realKey
         ? vehicle[realKey]
@@ -1396,7 +1551,8 @@
 
       for (
         let index = 0;
-        index < possibleNames.length;
+        index <
+        possibleNames.length;
         index++
       ) {
         const value =
@@ -1414,18 +1570,28 @@
     }
 
     function cleanHeader(value) {
-      return String(value || "")
-        .replace(/^\uFEFF/, "")
+      return String(
+        value || ""
+      )
+        .replace(
+          /^\uFEFF/,
+          ""
+        )
         .trim();
     }
 
     function normalizeHeader(value) {
       return normalizeText(value)
-        .replace(/\s+/g, "");
+        .replace(
+          /\s+/g,
+          ""
+        );
     }
 
     function normalizeText(value) {
-      return String(value || "")
+      return String(
+        value || ""
+      )
         .normalize("NFD")
         .replace(
           /[\u0300-\u036f]/g,
@@ -1452,7 +1618,8 @@
 
       for (
         let index = 0;
-        index < csvText.length;
+        index <
+        csvText.length;
         index++
       ) {
         const character =
@@ -1471,7 +1638,8 @@
         } else if (
           character === '"'
         ) {
-          insideQuotes = !insideQuotes;
+          insideQuotes =
+            !insideQuotes;
         } else if (
           character === "," &&
           !insideQuotes
@@ -1498,7 +1666,9 @@
             row.some(
               function (value) {
                 return (
-                  String(value || "").trim() !== ""
+                  String(
+                    value || ""
+                  ).trim() !== ""
                 );
               }
             )
@@ -1552,11 +1722,26 @@
 
     function escapeHTML(value) {
       return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+          "&",
+          "&amp;"
+        )
+        .replaceAll(
+          "<",
+          "&lt;"
+        )
+        .replaceAll(
+          ">",
+          "&gt;"
+        )
+        .replaceAll(
+          '"',
+          "&quot;"
+        )
+        .replaceAll(
+          "'",
+          "&#039;"
+        );
     }
   </script>
 
