@@ -149,7 +149,7 @@
 
     table {
       width: 100%;
-      min-width: 900px;
+      min-width: 950px;
       border-collapse: collapse;
     }
 
@@ -198,14 +198,25 @@
       white-space: nowrap;
     }
 
+    .date-badge {
+      display: inline-block;
+      min-width: 105px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      text-align: center;
+      white-space: nowrap;
+    }
+
     .green {
       background: #dff3e5;
       color: #176332;
     }
 
     .yellow {
-      background: #fff0b8;
-      color: #775500;
+      background: #ffe5b5;
+      color: #8a4b00;
     }
 
     .red {
@@ -216,6 +227,22 @@
     .neutral {
       background: #eeeeee;
       color: #555555;
+    }
+
+    .date-badge.green {
+      border: 1px solid #abd9b8;
+    }
+
+    .date-badge.yellow {
+      border: 1px solid #e5b65f;
+    }
+
+    .date-badge.red {
+      border: 1px solid #e5a19c;
+    }
+
+    .date-badge.neutral {
+      border: 1px solid #cccccc;
     }
 
     .empty-row {
@@ -233,6 +260,7 @@
       justify-content: center;
       padding: 20px;
       background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
     }
 
     .modal-overlay.open {
@@ -241,11 +269,12 @@
 
     .modal {
       position: relative;
-      width: min(620px, 100%);
+      width: min(680px, 100%);
       max-height: 88vh;
       overflow-y: auto;
+      overflow-x: hidden;
       background: #ffffff;
-      border-radius: 22px;
+      border-radius: 24px;
       box-shadow: 0 25px 75px rgba(0, 0, 0, 0.4);
     }
 
@@ -267,6 +296,63 @@
     .modal.neutral-popup {
       background: #eeeeee;
       border: 4px solid #888888;
+    }
+
+    .vehicle-popup-header {
+      position: relative;
+      padding: 32px 70px 28px 30px;
+      color: #ffffff;
+    }
+
+    .green-popup .vehicle-popup-header {
+      background: linear-gradient(135deg, #246b3a, #3d9158);
+    }
+
+    .yellow-popup .vehicle-popup-header {
+      background: linear-gradient(135deg, #b66a00, #df9b25);
+    }
+
+    .red-popup .vehicle-popup-header {
+      background: linear-gradient(135deg, #8f2823, #c94c45);
+    }
+
+    .neutral-popup .vehicle-popup-header {
+      background: linear-gradient(135deg, #555555, #888888);
+    }
+
+    .vehicle-popup-header h2 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    .vehicle-popup-subtitle {
+      margin: 7px 0 0;
+      opacity: 0.85;
+      font-size: 14px;
+    }
+
+    .vehicle-status-summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .status-symbol {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 23px;
+      height: 23px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.22);
+      font-size: 14px;
     }
 
     .modal-header {
@@ -291,54 +377,59 @@
       position: absolute;
       top: 15px;
       right: 15px;
+      z-index: 5;
       width: 40px;
       height: 40px;
       border: 0;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
       font-size: 25px;
       cursor: pointer;
+      backdrop-filter: blur(5px);
     }
 
-    .overall-status {
-      display: inline-block;
-      margin-top: 13px;
-      padding: 8px 12px;
-      border: 1px solid currentColor;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: bold;
+    .close-button:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
 
     .detail-row {
-      display: grid;
-      grid-template-columns: 150px 1fr;
-      gap: 18px;
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    }
-
-    .detail-row:last-child {
-      border-bottom: 0;
+      display: block;
+      padding: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.84);
     }
 
     .detail-label {
-      color: #666666;
-      font-size: 13px;
+      margin-bottom: 7px;
+      color: #777777;
+      font-size: 11px;
       font-weight: bold;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
     }
 
     .detail-value {
+      color: #1d1d1d;
+      font-size: 16px;
       font-weight: bold;
       overflow-wrap: anywhere;
     }
 
     .date-note {
       display: block;
-      margin-top: 5px;
+      margin-top: 7px;
+      color: #555555;
       font-size: 12px;
       font-weight: normal;
+      line-height: 1.4;
     }
 
     .choice-list {
@@ -399,9 +490,20 @@
         gap: 5px;
       }
 
-      .detail-row {
+      .details-grid {
         grid-template-columns: 1fr;
-        gap: 5px;
+      }
+
+      .vehicle-popup-header {
+        padding: 28px 60px 24px 22px;
+      }
+
+      .vehicle-popup-header h2 {
+        font-size: 25px;
+      }
+
+      .modal-body {
+        padding: 18px;
       }
     }
   </style>
@@ -643,8 +745,6 @@
           }
         );
 
-        console.log("Intestazioni trovate:", headers);
-
         vehicles = rows
           .slice(1)
           .filter(
@@ -719,8 +819,20 @@
 
       vehicles.forEach(
         function (vehicle, index) {
-          const status =
+          const overallStatus =
             getOverallStatus(vehicle);
+
+          const insuranceDate =
+            getValue(vehicle, "Assicurazione");
+
+          const inspectionDate =
+            getValue(vehicle, "Revisione");
+
+          const insuranceStatus =
+            evaluateDate(insuranceDate);
+
+          const inspectionStatus =
+            evaluateDate(inspectionDate);
 
           const row =
             document.createElement("tr");
@@ -743,15 +855,19 @@
             </td>
 
             <td>
-              ${escapeHTML(
-                getValue(vehicle, "Assicurazione") || "—"
-              )}
+              <span
+                class="date-badge ${insuranceStatus.level}"
+              >
+                ${escapeHTML(insuranceDate || "—")}
+              </span>
             </td>
 
             <td>
-              ${escapeHTML(
-                getValue(vehicle, "Revisione") || "—"
-              )}
+              <span
+                class="date-badge ${inspectionStatus.level}"
+              >
+                ${escapeHTML(inspectionDate || "—")}
+              </span>
             </td>
 
             <td>
@@ -768,9 +884,9 @@
 
             <td>
               <span
-                class="status-pill ${status.level}"
+                class="status-pill ${overallStatus.level}"
               >
-                ${escapeHTML(status.shortLabel)}
+                ${escapeHTML(overallStatus.shortLabel)}
               </span>
             </td>
           `;
@@ -879,6 +995,10 @@
         </div>
       `;
 
+      closeModalButton.style.color = "#1d1d1d";
+      closeModalButton.style.background =
+        "rgba(0, 0, 0, 0.1)";
+
       const choiceList =
         document.getElementById(
           "choiceList"
@@ -938,62 +1058,88 @@
       const overallStatus =
         getOverallStatus(vehicle);
 
+      const statusSymbol =
+        overallStatus.level === "green"
+          ? "✓"
+          : overallStatus.level === "yellow"
+            ? "!"
+            : overallStatus.level === "red"
+              ? "×"
+              : "?";
+
       modalContainer.className =
         "modal " + overallStatus.popupClass;
 
+      closeModalButton.style.color = "#ffffff";
+      closeModalButton.style.background =
+        "rgba(255, 255, 255, 0.22)";
+
       modalContent.innerHTML = `
-        <div class="modal-header">
+        <div class="vehicle-popup-header">
+
           <h2>
             ${escapeHTML(
               getValue(vehicle, "Nome")
             )}
           </h2>
 
-          <span class="overall-status">
+          <p class="vehicle-popup-subtitle">
+            Targa:
+            ${escapeHTML(
+              getValue(vehicle, "Targa") ||
+              "non disponibile"
+            )}
+          </p>
+
+          <div class="vehicle-status-summary">
+            <span class="status-symbol">
+              ${statusSymbol}
+            </span>
+
             ${escapeHTML(
               overallStatus.fullLabel
             )}
-          </span>
+          </div>
+
         </div>
 
         <div class="modal-body">
 
-          ${createDetailRow(
-            "Nome",
-            getValue(vehicle, "Nome")
-          )}
+          <div class="details-grid">
 
-          ${createDetailRow(
-            "Targa",
-            getValue(vehicle, "Targa")
-          )}
+            ${createDetailRow(
+              "Targa",
+              getValue(vehicle, "Targa")
+            )}
 
-          ${createDetailRow(
-            "Assicurazione",
-            insurance,
-            insuranceStatus.description
-          )}
+            ${createDetailRow(
+              "Assicurazione",
+              insurance,
+              insuranceStatus.description
+            )}
 
-          ${createDetailRow(
-            "Revisione",
-            inspection,
-            inspectionStatus.description
-          )}
+            ${createDetailRow(
+              "Revisione",
+              inspection,
+              inspectionStatus.description
+            )}
 
-          ${createDetailRow(
-            "Documento",
-            getValue(vehicle, "Documento")
-          )}
+            ${createDetailRow(
+              "Documento",
+              getValue(vehicle, "Documento")
+            )}
 
-          ${createDetailRow(
-            "Area B & C",
-            getAreaValue(vehicle)
-          )}
+            ${createDetailRow(
+              "Area B & C",
+              getAreaValue(vehicle)
+            )}
 
-          ${createDetailRow(
-            "Note",
-            getValue(vehicle, "Note")
-          )}
+            ${createDetailRow(
+              "Note",
+              getValue(vehicle, "Note")
+            )}
+
+          </div>
 
         </div>
       `;
@@ -1079,7 +1225,7 @@
           popupClass: "yellow-popup",
           shortLabel: "In scadenza",
           fullLabel:
-            "Almeno una scadenza è vicina"
+            "Almeno una scadenza è prossima"
         };
       }
 
@@ -1093,9 +1239,9 @@
         return {
           level: "green",
           popupClass: "green-popup",
-          shortLabel: "Regolare",
+          shortLabel: "Attive",
           fullLabel:
-            "Assicurazione e revisione regolari"
+            "Assicurazione e revisione attive"
         };
       }
 
@@ -1161,7 +1307,7 @@
       return {
         level: "green",
         description:
-          "Regolare. Mancano " +
+          "Attiva. Mancano " +
           differenceInDays +
           " giorni."
       };
