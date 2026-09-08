@@ -51,6 +51,40 @@
       text-transform: uppercase;
     }
 
+    .hero-navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .hero-navigation .brand {
+      margin: 0;
+    }
+
+    .tracker-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid #c9a45b;
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .tracker-link:hover,
+    .tracker-link:focus-visible {
+      background: #c9a45b;
+      color: #171717;
+      outline: none;
+    }
+
     h1 {
       margin: 0;
       font-size: clamp(34px, 6vw, 58px);
@@ -486,6 +520,15 @@
         border-radius: 18px;
       }
 
+      .hero-navigation {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .tracker-link {
+        width: 100%;
+      }
+
       .search-container {
         grid-template-columns: 1fr;
       }
@@ -525,7 +568,17 @@
 
     <section class="hero">
 
-      <p class="brand">Cambio Manuale</p>
+      <div class="hero-navigation">
+        <p class="brand">Cambio Manuale</p>
+
+        <a
+          class="tracker-link"
+          href="https://maintrawheels.lovable.app"
+          aria-label="Vai al Car Maintenance Tracker"
+        >
+          Vai al Maintenance Tracker →
+        </a>
+      </div>
 
       <h1>Controllo veicoli</h1>
 
