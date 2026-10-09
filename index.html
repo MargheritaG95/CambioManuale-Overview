@@ -29,7 +29,7 @@
     }
 
     .page {
-      width: min(1100px, calc(100% - 30px));
+      width: min(1280px, calc(100% - 30px));
       margin: 0 auto;
       padding: 35px 0 60px;
     }
@@ -153,6 +153,16 @@
       color: #a9e8bb;
     }
 
+    .last-update {
+      margin: 10px 0 0;
+      color: #d5d5d5;
+      font-size: 14px;
+    }
+
+    .last-update strong {
+      color: #c9a45b;
+    }
+
     .section {
       margin-top: 35px;
     }
@@ -183,7 +193,7 @@
 
     table {
       width: 100%;
-      min-width: 950px;
+      min-width: 1080px;
       border-collapse: collapse;
     }
 
@@ -272,6 +282,16 @@
     .status-pill.neutral {
       background: #eeeeee;
       color: #555555;
+    }
+
+    .note-cell {
+      min-width: 180px;
+      max-width: 300px;
+      color: #555555;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-line;
+      overflow-wrap: anywhere;
     }
 
     .empty-row {
@@ -496,6 +516,16 @@
       background: #fbf7ed;
     }
 
+    .choice-group {
+      display: block;
+      margin-bottom: 5px;
+      color: #9e782f;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
     .choice-name {
       display: block;
       font-size: 17px;
@@ -585,6 +615,7 @@
       <p class="description">
         Cerca una vettura per nome o targa.
         Puoi inserire anche una parte del nome, per esempio “Abarth”.
+        La ricerca vale sia per la lista veicoli sia per le auto personali.
       </p>
 
       <div class="search-container">
@@ -612,6 +643,11 @@
         Caricamento veicoli...
       </div>
 
+      <p id="lastUpdate" class="last-update" hidden>
+        Ultimo aggiornamento del file:
+        <strong id="lastUpdateDate"></strong>
+      </p>
+
     </section>
 
     <section class="section">
@@ -631,7 +667,7 @@
 
         <table>
 
-          <thead>
+          <thead id="vehicleTableHead">
             <tr>
               <th>Nome</th>
               <th>Targa</th>
@@ -640,12 +676,52 @@
               <th>Documento</th>
               <th>Area B &amp; C</th>
               <th>Stato</th>
+              <th>Note</th>
             </tr>
           </thead>
 
           <tbody id="vehicleTableBody">
             <tr>
-              <td colspan="7" class="empty-row">
+              <td colspan="8" class="empty-row">
+                Caricamento dati...
+              </td>
+            </tr>
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <section class="section">
+
+      <div class="section-title">
+
+        <h2>Auto personali</h2>
+
+        <span
+          id="personalCount"
+          class="vehicle-count"
+        ></span>
+
+      </div>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead id="personalTableHead">
+            <tr>
+              <th>Nome</th>
+              <th>Stato</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+
+          <tbody id="personalTableBody">
+            <tr>
+              <td colspan="3" class="empty-row">
                 Caricamento dati...
               </td>
             </tr>
@@ -685,423 +761,593 @@
   </div>
 
   <script>
-    const SHEET_CSV_URL =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT8TlSxIhvznxeUk6AUEDFHQcChXbhUnUYYxU3Ghz5eYr8kIZrDID4EsYl4jw0oWbYMjTVjjmjmec22/pub?output=csv";
+    /* ------------------------------------------------------------------
+       IMPOSTAZIONI
+       ------------------------------------------------------------------ */
 
+    // Indirizzo del documento Google Sheets pubblicato sul web
+    // (la parte prima di "pub?output=csv").
+    const PUBLISHED_SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT8TlSxIhvznxeUk6AUEDFHQcChXbhUnUYYxU3Ghz5eYr8kIZrDID4EsYl4jw0oWbYMjTVjjmjmec22/";
+
+    // Primo foglio: lista veicoli.
+    const VEHICLES_CSV_URL =
+      PUBLISHED_SHEET_URL + "pub?output=csv";
+
+    // Secondo foglio: auto personali.
+    // È il numero "gid" del secondo foglio: apri il foglio in Google Sheets
+    // e copia il numero che trovi nell'indirizzo dopo "gid=".
+    // Se resta vuoto, la pagina prova a trovarlo da sola.
+    const PERSONAL_SHEET_GID = "";
+
+    // Giorni prima della scadenza in cui la data diventa gialla.
     const WARNING_DAYS = 30;
 
-    let vehicles = [];
+    // Le colonne il cui titolo contiene una di queste parole sono trattate
+    // come scadenze (verde / giallo / rosso). Vale per entrambi i fogli.
+    const DEADLINE_KEYWORDS = [
+      "assicurazione",
+      "revisione",
+      "bollo",
+      "scadenza"
+    ];
 
-    const searchInput =
-      document.getElementById("searchInput");
+    /* ------------------------------------------------------------------
+       LE DUE LISTE
+       ------------------------------------------------------------------ */
 
-    const searchButton =
-      document.getElementById("searchButton");
-
-    const message =
-      document.getElementById("message");
-
-    const vehicleCount =
-      document.getElementById("vehicleCount");
-
-    const vehicleTableBody =
-      document.getElementById("vehicleTableBody");
-
-    const modalOverlay =
-      document.getElementById("modalOverlay");
-
-    const modalContainer =
-      document.getElementById("modalContainer");
-
-    const modalContent =
-      document.getElementById("modalContent");
-
-    const closeModalButton =
-      document.getElementById("closeModalButton");
-
-    window.addEventListener(
-      "load",
-      loadVehicles
-    );
-
-    searchButton.addEventListener(
-      "click",
-      runSearch
-    );
-
-    searchInput.addEventListener(
-      "keydown",
-      function (event) {
-        if (event.key === "Enter") {
-          runSearch();
-        }
+    const lists = [
+      {
+        id: "vehicles",
+        title: "Lista veicoli",
+        one: "veicolo",
+        many: "veicoli",
+        // Colonne fisse, nell'ordine in cui vengono mostrate.
+        // Per "Area B & C" sono accettati più modi di scriverla.
+        fixedColumns: [
+          ["Nome"],
+          ["Targa"],
+          ["Assicurazione"],
+          ["Revisione"],
+          ["Documento"],
+          ["Area B & C", "Area B&C", "Area B e C", "Area B C"]
+        ],
+        head: document.getElementById("vehicleTableHead"),
+        body: document.getElementById("vehicleTableBody"),
+        count: document.getElementById("vehicleCount"),
+        columns: [],
+        noteKey: "",
+        rows: [],
+        updated: null
+      },
+      {
+        id: "personal",
+        title: "Auto personali",
+        one: "auto personale",
+        many: "auto personali",
+        // Nessuna colonna fissa: vengono usate le intestazioni
+        // del secondo foglio, nello stesso ordine.
+        fixedColumns: null,
+        head: document.getElementById("personalTableHead"),
+        body: document.getElementById("personalTableBody"),
+        count: document.getElementById("personalCount"),
+        columns: [],
+        noteKey: "",
+        rows: [],
+        updated: null
       }
-    );
+    ];
 
-    closeModalButton.addEventListener(
-      "click",
-      closeModal
-    );
+    const searchInput = document.getElementById("searchInput");
+    const searchButton = document.getElementById("searchButton");
+    const message = document.getElementById("message");
+    const lastUpdate = document.getElementById("lastUpdate");
+    const lastUpdateDate = document.getElementById("lastUpdateDate");
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalContainer = document.getElementById("modalContainer");
+    const modalContent = document.getElementById("modalContent");
+    const closeModalButton = document.getElementById("closeModalButton");
 
-    modalOverlay.addEventListener(
-      "click",
-      function (event) {
-        if (event.target === modalOverlay) {
-          closeModal();
-        }
+    window.addEventListener("load", loadAll);
+
+    searchButton.addEventListener("click", runSearch);
+
+    searchInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        runSearch();
       }
-    );
+    });
 
-    document.addEventListener(
-      "keydown",
-      function (event) {
-        if (event.key === "Escape") {
-          closeModal();
-        }
+    closeModalButton.addEventListener("click", closeModal);
+
+    modalOverlay.addEventListener("click", function (event) {
+      if (event.target === modalOverlay) {
+        closeModal();
       }
-    );
+    });
 
-    async function loadVehicles() {
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    });
+
+    lists.forEach(function (list) {
+      list.body.addEventListener("click", function (event) {
+        const button = event.target.closest(".vehicle-name-button");
+
+        if (button) {
+          showVehicleDetails(
+            list,
+            list.rows[Number(button.dataset.index)]
+          );
+        }
+      });
+    });
+
+    /* ------------------------------------------------------------------
+       CARICAMENTO
+       ------------------------------------------------------------------ */
+
+    async function loadAll() {
+      const vehiclesList = lists[0];
+      const personalList = lists[1];
+
       message.className = "message";
-      message.textContent =
-        "Caricamento veicoli...";
-
+      message.textContent = "Caricamento veicoli...";
       searchButton.disabled = true;
 
-      try {
-        const response = await fetch(
-          SHEET_CSV_URL,
-          {
-            cache: "no-store"
+      let vehiclesCsv = "";
+
+      const vehiclesLoaded = fetchCSV(VEHICLES_CSV_URL)
+        .then(function (csvText) {
+          vehiclesCsv = csvText;
+          fillList(vehiclesList, csvText);
+          return true;
+        })
+        .catch(function (error) {
+          console.error("Errore caricamento veicoli:", error);
+          showListError(
+            vehiclesList,
+            "Impossibile caricare la lista dei veicoli."
+          );
+          return false;
+        });
+
+      const personalLoaded = loadPersonalCSV()
+        .then(async function (csvText) {
+          await vehiclesLoaded;
+
+          if (csvText === vehiclesCsv) {
+            throw new Error(
+              "Il secondo foglio ha restituito gli stessi dati del primo."
+            );
           }
-        );
 
-        if (!response.ok) {
-          throw new Error(
-            "Risposta Google Sheets non valida: " +
-            response.status
+          fillList(personalList, csvText);
+          return true;
+        })
+        .catch(function (error) {
+          console.error("Errore caricamento auto personali:", error);
+          showListError(
+            personalList,
+            "Impossibile caricare le auto personali. " +
+            "Controlla che su Google Sheets sia pubblicato l'intero " +
+            "documento (File → Condividi → Pubblica sul web) e che il " +
+            "secondo foglio contenga dei dati."
           );
-        }
+          return false;
+        });
 
-        const csvText =
-          await response.text();
+      const vehiclesOk = await vehiclesLoaded;
+      const personalOk = await personalLoaded;
 
-        if (
-          !csvText ||
-          csvText.trim().startsWith("<!DOCTYPE") ||
-          csvText.trim().startsWith("<html")
-        ) {
-          throw new Error(
-            "Google Sheets ha restituito HTML invece del CSV."
-          );
-        }
+      renderLastUpdate();
 
-        const rows =
-          parseCSV(csvText);
+      searchButton.disabled = !(vehiclesOk || personalOk);
 
-        if (rows.length < 2) {
-          throw new Error(
-            "Il foglio non contiene righe di dati."
-          );
-        }
-
-        const headers =
-          rows[0].map(
-            function (header) {
-              return cleanHeader(header);
-            }
-          );
-
-        vehicles = rows
-          .slice(1)
-          .filter(
-            function (row) {
-              return row.some(
-                function (cell) {
-                  return (
-                    String(cell || "").trim() !== ""
-                  );
-                }
-              );
-            }
-          )
-          .map(
-            function (row) {
-              const vehicle = {};
-
-              headers.forEach(
-                function (header, index) {
-                  vehicle[header] =
-                    String(
-                      row[index] || ""
-                    ).trim();
-                }
-              );
-
-              return vehicle;
-            }
-          );
-
-        if (vehicles.length === 0) {
-          throw new Error(
-            "Non sono stati trovati veicoli."
-          );
-        }
-
-        renderTable();
-
-        searchButton.disabled = false;
-
-        message.className =
-          "message success";
-
+      if (vehiclesOk && personalOk) {
+        message.className = "message success";
         message.textContent =
-          vehicles.length +
-          " veicoli caricati.";
-
-      } catch (error) {
-        console.error(
-          "Errore caricamento veicoli:",
-          error
-        );
-
-        vehicles = [];
-
-        searchButton.disabled = true;
-
-        vehicleCount.textContent =
-          "0 veicoli";
-
-        vehicleTableBody.innerHTML = `
-          <tr>
-            <td colspan="7" class="empty-row">
-              Impossibile caricare la lista dei veicoli.
-            </td>
-          </tr>
-        `;
-
-        message.className =
-          "message error";
-
+          countLabel(vehiclesList) + " e " +
+          countLabel(personalList) + " caricati.";
+      } else if (vehiclesOk) {
+        message.className = "message success";
         message.textContent =
-          "Errore nel caricamento dei dati. Controlla che il foglio sia pubblicato.";
+          countLabel(vehiclesList) +
+          " caricati. Auto personali non disponibili.";
+      } else if (personalOk) {
+        message.className = "message error";
+        message.textContent =
+          "Lista veicoli non disponibile. " +
+          countLabel(personalList) + " caricate.";
+      } else {
+        message.className = "message error";
+        message.textContent =
+          "Errore nel caricamento dei dati. " +
+          "Controlla che il foglio sia pubblicato.";
       }
     }
 
-    function renderTable() {
-      vehicleTableBody.innerHTML = "";
+    async function fetchCSV(url) {
+      const response = await fetch(url, { cache: "no-store" });
 
-      vehicleCount.textContent =
-        vehicles.length + " veicoli";
-
-      vehicles.forEach(
-        function (vehicle, index) {
-          const overallStatus =
-            getOverallStatus(vehicle);
-
-          const insuranceDate =
-            getValue(
-              vehicle,
-              "Assicurazione"
-            );
-
-          const inspectionDate =
-            getValue(
-              vehicle,
-              "Revisione"
-            );
-
-          const insuranceStatus =
-            evaluateDate(insuranceDate);
-
-          const inspectionStatus =
-            evaluateDate(inspectionDate);
-
-          const row =
-            document.createElement("tr");
-
-          row.innerHTML = `
-            <td>
-              <button
-                class="vehicle-name-button"
-                type="button"
-                data-index="${index}"
-              >
-                ${escapeHTML(
-                  getValue(vehicle, "Nome")
-                )}
-              </button>
-            </td>
-
-            <td>
-              ${escapeHTML(
-                getValue(vehicle, "Targa") ||
-                "—"
-              )}
-            </td>
-
-            <td>
-              <span
-                class="date-text ${insuranceStatus.level}"
-              >
-                ${escapeHTML(
-                  insuranceDate || "—"
-                )}
-              </span>
-            </td>
-
-            <td>
-              <span
-                class="date-text ${inspectionStatus.level}"
-              >
-                ${escapeHTML(
-                  inspectionDate || "—"
-                )}
-              </span>
-            </td>
-
-            <td>
-              ${escapeHTML(
-                getValue(
-                  vehicle,
-                  "Documento"
-                ) || "—"
-              )}
-            </td>
-
-            <td>
-              ${escapeHTML(
-                getAreaValue(vehicle) ||
-                "—"
-              )}
-            </td>
-
-            <td>
-              <span
-                class="status-pill ${overallStatus.level}"
-              >
-                ${escapeHTML(
-                  overallStatus.shortLabel
-                )}
-              </span>
-            </td>
-          `;
-
-          vehicleTableBody.appendChild(
-            row
-          );
-        }
-      );
-
-      const buttons =
-        document.querySelectorAll(
-          ".vehicle-name-button"
+      if (!response.ok) {
+        throw new Error(
+          "Risposta Google Sheets non valida: " + response.status
         );
+      }
 
-      buttons.forEach(
-        function (button) {
-          button.addEventListener(
-            "click",
-            function () {
-              const index =
-                Number(
-                  button.dataset.index
-                );
+      const csvText = await response.text();
+      const start = csvText.trim().toLowerCase();
 
-              showVehicleDetails(
-                vehicles[index]
-              );
-            }
-          );
-        }
+      if (
+        !start ||
+        start.startsWith("<!doctype") ||
+        start.startsWith("<html")
+      ) {
+        throw new Error(
+          "Google Sheets ha restituito HTML invece del CSV."
+        );
+      }
+
+      return csvText;
+    }
+
+    async function loadPersonalCSV() {
+      const gid =
+        String(PERSONAL_SHEET_GID).trim() ||
+        await findSecondSheetGid();
+
+      return fetchCSV(
+        PUBLISHED_SHEET_URL +
+        "pub?gid=" + encodeURIComponent(gid) +
+        "&single=true&output=csv"
       );
     }
+
+    // Legge l'elenco dei fogli dalla pagina pubblicata e restituisce
+    // il "gid" del secondo foglio.
+    async function findSecondSheetGid() {
+      const response = await fetch(
+        PUBLISHED_SHEET_URL + "pubhtml",
+        { cache: "no-store" }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Elenco dei fogli non disponibile: " + response.status
+        );
+      }
+
+      const html = await response.text();
+      const gids = [];
+      const pattern = /gid(?:\\x3d|=|%3D|"?\s*:\s*"?)(\d+)/gi;
+      let match = pattern.exec(html);
+
+      while (match) {
+        if (!gids.includes(match[1])) {
+          gids.push(match[1]);
+        }
+
+        match = pattern.exec(html);
+      }
+
+      if (gids.length < 2) {
+        throw new Error(
+          "Nel documento pubblicato non è stato trovato un secondo foglio."
+        );
+      }
+
+      return gids[1];
+    }
+
+    function fillList(list, csvText) {
+      const rows = parseCSV(csvText);
+
+      if (rows.length < 2) {
+        throw new Error("Il foglio non contiene righe di dati.");
+      }
+
+      const headers = rows[0].map(cleanHeader);
+
+      const noteIndex = headers.findIndex(function (header) {
+        return ["note", "nota"].includes(normalizeHeader(header));
+      });
+
+      list.updated = extractUpdateDate(rows, noteIndex);
+
+      list.rows = rows
+        .slice(1)
+        .filter(function (row) {
+          return row.some(function (cell) {
+            return String(cell || "").trim() !== "";
+          });
+        })
+        .map(function (row) {
+          const vehicle = {};
+
+          headers.forEach(function (header, index) {
+            if (header) {
+              vehicle[header] = String(row[index] || "").trim();
+            }
+          });
+
+          return vehicle;
+        });
+
+      if (list.rows.length === 0) {
+        throw new Error("Non sono stati trovati veicoli.");
+      }
+
+      list.noteKey = noteIndex >= 0 ? headers[noteIndex] : "";
+      list.columns = buildColumns(list, headers);
+
+      renderTable(list);
+    }
+
+    // Cerca nel foglio una cella del tipo "aggiornato: 09.10.2026"
+    // (oppure "aggiornato" con la data nella cella accanto), la toglie
+    // dai dati e restituisce la data.
+    function extractUpdateDate(rows, noteIndex) {
+      const label =
+        /^\s*(ultim[oa]\s+)?(aggiornat[oa]|aggiornamento|modifica(t[oa])?)\b/i;
+
+      const datePattern = /\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/;
+
+      let found = null;
+
+      rows.forEach(function (row, rowIndex) {
+        row.forEach(function (cell, cellIndex) {
+          const text = String(cell || "");
+
+          if (
+            found ||
+            cellIndex === noteIndex ||
+            text.length > 60 ||
+            !label.test(text)
+          ) {
+            return;
+          }
+
+          let date = null;
+          const inside = text.match(datePattern);
+
+          if (inside) {
+            date = parseDate(inside[0]);
+          } else {
+            date = parseDate(row[cellIndex + 1]);
+
+            if (date) {
+              row[cellIndex + 1] = "";
+            }
+          }
+
+          if (date) {
+            found = date;
+            row[cellIndex] = "";
+          }
+        });
+      });
+
+      return found;
+    }
+
+    function buildColumns(list, headers) {
+      const usable = headers.filter(function (header) {
+        return header && header !== list.noteKey;
+      });
+
+      let columns;
+
+      if (list.fixedColumns) {
+        columns = list.fixedColumns.map(function (names) {
+          const key = usable.find(function (header) {
+            return names.some(function (name) {
+              return normalizeHeader(name) === normalizeHeader(header);
+            });
+          });
+
+          return { label: names[0], key: key || "" };
+        });
+      } else {
+        columns = usable.map(function (header) {
+          return { label: header, key: header };
+        });
+      }
+
+      const nameColumn =
+        columns.find(function (column) {
+          return normalizeHeader(column.label) === "nome";
+        }) || columns[0];
+
+      columns.forEach(function (column) {
+        const label = normalizeText(column.label);
+
+        if (column === nameColumn) {
+          column.kind = "name";
+        } else if (
+          DEADLINE_KEYWORDS.some(function (keyword) {
+            return label.includes(keyword);
+          })
+        ) {
+          column.kind = "deadline";
+        } else if (label === "targa") {
+          column.kind = "plate";
+        } else {
+          column.kind = "text";
+        }
+      });
+
+      return columns;
+    }
+
+    /* ------------------------------------------------------------------
+       TABELLE
+       ------------------------------------------------------------------ */
+
+    function renderTable(list) {
+      list.count.textContent = countLabel(list);
+
+      list.head.innerHTML =
+        "<tr>" +
+        list.columns
+          .map(function (column) {
+            return "<th>" + escapeHTML(column.label) + "</th>";
+          })
+          .join("") +
+        "<th>Stato</th><th>Note</th></tr>";
+
+      list.body.innerHTML = list.rows
+        .map(function (vehicle, index) {
+          const overallStatus = getOverallStatus(list, vehicle);
+
+          const cells = list.columns.map(function (column) {
+            const value = cellValue(vehicle, column);
+
+            if (column.kind === "name") {
+              return `
+                <td>
+                  <button
+                    class="vehicle-name-button"
+                    type="button"
+                    data-index="${index}"
+                  >${escapeHTML(value || "—")}</button>
+                </td>
+              `;
+            }
+
+            if (column.kind === "deadline") {
+              return `
+                <td>
+                  <span
+                    class="date-text ${evaluateDate(value).level}"
+                  >${escapeHTML(value || "—")}</span>
+                </td>
+              `;
+            }
+
+            return "<td>" + escapeHTML(value || "—") + "</td>";
+          });
+
+          return `
+            <tr>
+              ${cells.join("")}
+
+              <td>
+                <span
+                  class="status-pill ${overallStatus.level}"
+                >${escapeHTML(overallStatus.shortLabel)}</span>
+              </td>
+
+              <td class="note-cell">${escapeHTML(
+                getNote(list, vehicle) || "—"
+              )}</td>
+            </tr>
+          `;
+        })
+        .join("");
+    }
+
+    function showListError(list, text) {
+      list.rows = [];
+      list.count.textContent = "0 " + list.many;
+
+      const columnCount =
+        list.head.querySelectorAll("th").length || 1;
+
+      list.body.innerHTML = `
+        <tr>
+          <td colspan="${columnCount}" class="empty-row">
+            ${escapeHTML(text)}
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderLastUpdate() {
+      const dates = lists
+        .map(function (list) {
+          return list.updated;
+        })
+        .filter(Boolean)
+        .sort(function (first, second) {
+          return second.getTime() - first.getTime();
+        });
+
+      if (dates.length === 0) {
+        lastUpdate.hidden = true;
+        return;
+      }
+
+      lastUpdateDate.textContent = formatDate(dates[0]);
+      lastUpdate.hidden = false;
+    }
+
+    function countLabel(list) {
+      return (
+        list.rows.length + " " +
+        (list.rows.length === 1 ? list.one : list.many)
+      );
+    }
+
+    /* ------------------------------------------------------------------
+       RICERCA (su entrambe le liste)
+       ------------------------------------------------------------------ */
 
     function runSearch() {
-      if (vehicles.length === 0) {
-        showError(
-          "La lista dei veicoli non è ancora disponibile."
-        );
+      const loaded = lists.some(function (list) {
+        return list.rows.length > 0;
+      });
 
+      if (!loaded) {
+        showError("La lista dei veicoli non è ancora disponibile.");
         return;
       }
 
-      const query =
-        normalizeText(
-          searchInput.value
-        );
+      const query = normalizeText(searchInput.value);
 
       if (!query) {
-        showError(
-          "Scrivi il nome o la targa del veicolo."
-        );
-
+        showError("Scrivi il nome o la targa del veicolo.");
         return;
       }
 
-      const results =
-        vehicles.filter(
-          function (vehicle) {
-            const name =
-              normalizeText(
-                getValue(
-                  vehicle,
-                  "Nome"
-                )
-              );
+      const results = [];
 
-            const plate =
-              normalizeText(
-                getValue(
-                  vehicle,
-                  "Targa"
-                )
-              );
+      lists.forEach(function (list) {
+        list.rows.forEach(function (vehicle) {
+          const name = normalizeText(getName(list, vehicle));
+          const plate = normalizeText(getPlate(list, vehicle));
 
-            return (
-              name.includes(query) ||
-              plate.includes(query)
-            );
+          if (name.includes(query) || plate.includes(query)) {
+            results.push({ list: list, vehicle: vehicle });
           }
-        );
+        });
+      });
 
       if (results.length === 0) {
-        showError(
-          "Nessun veicolo trovato."
-        );
-
+        showError("Nessun veicolo trovato.");
         return;
       }
 
-      message.className =
-        "message success";
+      message.className = "message success";
 
       message.textContent =
         results.length === 1
           ? "1 veicolo trovato."
-          : results.length +
-            " veicoli trovati.";
+          : results.length + " veicoli trovati.";
 
       if (results.length === 1) {
-        showVehicleDetails(
-          results[0]
-        );
+        showVehicleDetails(results[0].list, results[0].vehicle);
       } else {
-        showVehicleChoice(
-          results
-        );
+        showVehicleChoice(results);
       }
     }
 
     function showVehicleChoice(results) {
-      modalContainer.className =
-        "modal";
-
-      closeModalButton.style.color =
-        "#1d1d1d";
-
-      closeModalButton.style.background =
-        "rgba(0, 0, 0, 0.1)";
+      modalContainer.className = "modal";
+      closeModalButton.style.color = "#1d1d1d";
+      closeModalButton.style.background = "rgba(0, 0, 0, 0.1)";
 
       modalContent.innerHTML = `
         <div class="modal-header">
@@ -1120,84 +1366,48 @@
         </div>
       `;
 
-      const choiceList =
-        document.getElementById(
-          "choiceList"
-        );
+      const choiceList = document.getElementById("choiceList");
 
-      results.forEach(
-        function (vehicle) {
-          const button =
-            document.createElement(
-              "button"
-            );
+      results.forEach(function (result) {
+        const button = document.createElement("button");
 
-          button.type = "button";
+        button.type = "button";
+        button.className = "choice-button";
 
-          button.className =
-            "choice-button";
+        button.innerHTML = `
+          <span class="choice-group">
+            ${escapeHTML(result.list.title)}
+          </span>
 
-          button.innerHTML = `
-            <span class="choice-name">
-              ${escapeHTML(
-                getValue(
-                  vehicle,
-                  "Nome"
-                )
-              )}
-            </span>
+          <span class="choice-name">
+            ${escapeHTML(getName(result.list, result.vehicle))}
+          </span>
 
-            <span class="choice-plate">
-              Targa:
-              ${escapeHTML(
-                getValue(
-                  vehicle,
-                  "Targa"
-                ) ||
-                "non disponibile"
-              )}
-            </span>
-          `;
+          <span class="choice-plate">
+            Targa:
+            ${escapeHTML(
+              getPlate(result.list, result.vehicle) ||
+              "non disponibile"
+            )}
+          </span>
+        `;
 
-          button.addEventListener(
-            "click",
-            function () {
-              showVehicleDetails(
-                vehicle
-              );
-            }
-          );
+        button.addEventListener("click", function () {
+          showVehicleDetails(result.list, result.vehicle);
+        });
 
-          choiceList.appendChild(
-            button
-          );
-        }
-      );
+        choiceList.appendChild(button);
+      });
 
       openModal();
     }
 
-    function showVehicleDetails(vehicle) {
-      const insurance =
-        getValue(
-          vehicle,
-          "Assicurazione"
-        );
+    /* ------------------------------------------------------------------
+       SCHEDA DEL VEICOLO
+       ------------------------------------------------------------------ */
 
-      const inspection =
-        getValue(
-          vehicle,
-          "Revisione"
-        );
-
-      const insuranceStatus =
-        evaluateDate(insurance);
-
-      const inspectionStatus =
-        evaluateDate(inspection);
-
-      const overallStatus =
-        getOverallStatus(vehicle);
+    function showVehicleDetails(list, vehicle) {
+      const overallStatus = getOverallStatus(list, vehicle);
 
       const statusSymbol =
         overallStatus.level === "green"
@@ -1209,35 +1419,49 @@
               : "?";
 
       modalContainer.className =
-        "modal " +
-        overallStatus.popupClass;
+        "modal " + overallStatus.popupClass;
 
-      closeModalButton.style.color =
-        "#ffffff";
+      closeModalButton.style.color = "#ffffff";
 
       closeModalButton.style.background =
         "rgba(255, 255, 255, 0.22)";
+
+      const detailRows = list.columns
+        .filter(function (column) {
+          return column.kind !== "name";
+        })
+        .map(function (column) {
+          const value = cellValue(vehicle, column);
+
+          if (column.kind === "deadline") {
+            const status = evaluateDate(value);
+
+            return createDetailRow(
+              column.label,
+              value,
+              status.description,
+              status.level
+            );
+          }
+
+          return createDetailRow(column.label, value);
+        });
+
+      detailRows.push(
+        createDetailRow("Note", getNote(list, vehicle))
+      );
 
       modalContent.innerHTML = `
         <div class="vehicle-popup-header">
 
           <h2>
-            ${escapeHTML(
-              getValue(
-                vehicle,
-                "Nome"
-              )
-            )}
+            ${escapeHTML(getName(list, vehicle))}
           </h2>
 
           <p class="vehicle-popup-subtitle">
-            Targa:
+            ${escapeHTML(list.title)} · Targa:
             ${escapeHTML(
-              getValue(
-                vehicle,
-                "Targa"
-              ) ||
-              "non disponibile"
+              getPlate(list, vehicle) || "non disponibile"
             )}
           </p>
 
@@ -1247,9 +1471,7 @@
               ${statusSymbol}
             </span>
 
-            ${escapeHTML(
-              overallStatus.fullLabel
-            )}
+            ${escapeHTML(overallStatus.fullLabel)}
 
           </div>
 
@@ -1258,50 +1480,7 @@
         <div class="modal-body">
 
           <div class="details-grid">
-
-            ${createDetailRow(
-              "Targa",
-              getValue(
-                vehicle,
-                "Targa"
-              )
-            )}
-
-            ${createDetailRow(
-              "Assicurazione",
-              insurance,
-              insuranceStatus.description,
-              insuranceStatus.level
-            )}
-
-            ${createDetailRow(
-              "Revisione",
-              inspection,
-              inspectionStatus.description,
-              inspectionStatus.level
-            )}
-
-            ${createDetailRow(
-              "Documento",
-              getValue(
-                vehicle,
-                "Documento"
-              )
-            )}
-
-            ${createDetailRow(
-              "Area B & C",
-              getAreaValue(vehicle)
-            )}
-
-            ${createDetailRow(
-              "Note",
-              getValue(
-                vehicle,
-                "Note"
-              )
-            )}
-
+            ${detailRows.join("")}
           </div>
 
         </div>
@@ -1349,79 +1528,50 @@
       `;
     }
 
-    function getOverallStatus(vehicle) {
-      const insuranceStatus =
-        evaluateDate(
-          getValue(
-            vehicle,
-            "Assicurazione"
-          )
-        );
+    /* ------------------------------------------------------------------
+       STATO E SCADENZE
+       ------------------------------------------------------------------ */
 
-      const inspectionStatus =
-        evaluateDate(
-          getValue(
-            vehicle,
-            "Revisione"
-          )
-        );
+    function getOverallStatus(list, vehicle) {
+      const statuses = list.columns
+        .filter(function (column) {
+          return column.kind === "deadline";
+        })
+        .map(function (column) {
+          return evaluateDate(cellValue(vehicle, column));
+        });
 
-      const statuses = [
-        insuranceStatus,
-        inspectionStatus
-      ];
+      const has = function (level) {
+        return statuses.some(function (status) {
+          return status.level === level;
+        });
+      };
 
-      if (
-        statuses.some(
-          function (status) {
-            return (
-              status.level === "red"
-            );
-          }
-        )
-      ) {
+      if (has("red")) {
         return {
           level: "red",
           popupClass: "red-popup",
           shortLabel: "Scaduto",
           fullLabel:
-            "Almeno una scadenza è superata"
+            "Almeno una scadenza è superata o non disponibile (N/A)"
         };
       }
 
-      if (
-        statuses.some(
-          function (status) {
-            return (
-              status.level === "yellow"
-            );
-          }
-        )
-      ) {
+      if (has("yellow")) {
         return {
           level: "yellow",
           popupClass: "yellow-popup",
           shortLabel: "In scadenza",
-          fullLabel:
-            "Almeno una scadenza è prossima"
+          fullLabel: "Almeno una scadenza è prossima"
         };
       }
 
-      if (
-        statuses.every(
-          function (status) {
-            return (
-              status.level === "green"
-            );
-          }
-        )
-      ) {
+      if (statuses.length > 0 && !has("neutral")) {
         return {
           level: "green",
           popupClass: "green-popup",
           shortLabel: "Attive",
-          fullLabel:
-            "Assicurazione e revisione attive"
+          fullLabel: "Tutte le scadenze sono attive"
         };
       }
 
@@ -1429,82 +1579,65 @@
         level: "neutral",
         popupClass: "neutral-popup",
         shortLabel: "Da verificare",
-        fullLabel:
-          "Dati di scadenza da verificare"
+        fullLabel: "Dati di scadenza da verificare"
       };
     }
 
+    // "N/A" (anche scritto NA, N.A., n/a) vale come scaduto.
+    function isNotAvailable(value) {
+      return /^n\s*[\/.\\-]?\s*a\.?$/i.test(
+        String(value || "").trim()
+      );
+    }
+
     function evaluateDate(rawDate) {
-      const date =
-        parseDate(rawDate);
+      if (isNotAvailable(rawDate)) {
+        return {
+          level: "red",
+          description: "Non disponibile (N/A): conta come scaduta."
+        };
+      }
+
+      const date = parseDate(rawDate);
 
       if (!date) {
         return {
           level: "neutral",
-          description:
-            "Data non disponibile o non riconosciuta."
+          description: "Data non disponibile o non riconosciuta."
         };
       }
 
-      const today =
-        new Date();
+      const today = new Date();
 
-      today.setHours(
-        0,
-        0,
-        0,
-        0
+      today.setHours(0, 0, 0, 0);
+      date.setHours(0, 0, 0, 0);
+
+      const differenceInDays = Math.round(
+        (date.getTime() - today.getTime()) / 86400000
       );
-
-      date.setHours(
-        0,
-        0,
-        0,
-        0
-      );
-
-      const differenceInDays =
-        Math.ceil(
-          (
-            date.getTime() -
-            today.getTime()
-          ) /
-          86400000
-        );
 
       if (differenceInDays < 0) {
         return {
           level: "red",
           description:
-            "Scaduta da " +
-            Math.abs(
-              differenceInDays
-            ) +
-            " giorni."
+            "Scaduta da " + Math.abs(differenceInDays) + " giorni."
         };
       }
 
-      if (
-        differenceInDays <=
-        WARNING_DAYS
-      ) {
+      if (differenceInDays <= WARNING_DAYS) {
         return {
           level: "yellow",
           description:
             differenceInDays === 0
               ? "Scade oggi."
-              : "In scadenza tra " +
-                differenceInDays +
-                " giorni."
+              : "In scadenza tra " + differenceInDays + " giorni."
         };
       }
 
       return {
         level: "green",
         description:
-          "Attiva. Scade tra " +
-          differenceInDays +
-          " giorni."
+          "Attiva. Scade tra " + differenceInDays + " giorni."
       };
     }
 
@@ -1513,152 +1646,100 @@
         return null;
       }
 
-      const text =
-        String(value).trim();
+      const text = String(value).trim();
 
-      const italianMatch =
-        text.match(
-          /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/
-        );
+      const italianMatch = text.match(
+        /^(\d{1,2})[./-](\d{1,2})[./-](\d{2}|\d{4})$/
+      );
 
       if (italianMatch) {
-        const day =
-          Number(
-            italianMatch[1]
-          );
-
-        const month =
-          Number(
-            italianMatch[2]
-          );
+        const day = Number(italianMatch[1]);
+        const month = Number(italianMatch[2]);
 
         const year =
-          Number(
-            italianMatch[3]
-          );
+          italianMatch[3].length === 2
+            ? 2000 + Number(italianMatch[3])
+            : Number(italianMatch[3]);
 
-        const date =
-          new Date(
-            year,
-            month - 1,
-            day
-          );
+        const date = new Date(year, month - 1, day);
 
         if (
           date.getFullYear() === year &&
-          date.getMonth() ===
-            month - 1 &&
+          date.getMonth() === month - 1 &&
           date.getDate() === day
         ) {
           return date;
         }
+
+        return null;
       }
 
-      const automaticDate =
-        new Date(text);
+      if (!/\d{4}/.test(text)) {
+        return null;
+      }
 
-      if (
-        !Number.isNaN(
-          automaticDate.getTime()
-        )
-      ) {
+      const automaticDate = new Date(text);
+
+      if (!Number.isNaN(automaticDate.getTime())) {
         return automaticDate;
       }
 
       return null;
     }
 
-    function getValue(
-      vehicle,
-      requestedKey
-    ) {
-      const normalizedRequestedKey =
-        normalizeHeader(
-          requestedKey
-        );
-
-      const realKey =
-        Object.keys(
-          vehicle
-        ).find(
-          function (key) {
-            return (
-              normalizeHeader(key) ===
-              normalizedRequestedKey
-            );
-          }
-        );
-
-      return realKey
-        ? vehicle[realKey]
-        : "";
+    function formatDate(date) {
+      return (
+        String(date.getDate()).padStart(2, "0") + "." +
+        String(date.getMonth() + 1).padStart(2, "0") + "." +
+        date.getFullYear()
+      );
     }
 
-    function getAreaValue(vehicle) {
-      const possibleNames = [
-        "Area B & C",
-        "Area B&C",
-        "Area B e C",
-        "Area B C"
-      ];
+    /* ------------------------------------------------------------------
+       LETTURA DEI VALORI
+       ------------------------------------------------------------------ */
 
-      for (
-        let index = 0;
-        index <
-        possibleNames.length;
-        index++
-      ) {
-        const value =
-          getValue(
-            vehicle,
-            possibleNames[index]
-          );
+    function cellValue(vehicle, column) {
+      return column.key ? vehicle[column.key] || "" : "";
+    }
 
-        if (value) {
-          return value;
-        }
-      }
+    function getByKind(list, vehicle, kind) {
+      const column = list.columns.find(function (item) {
+        return item.kind === kind;
+      });
 
-      return "";
+      return column ? cellValue(vehicle, column) : "";
+    }
+
+    function getName(list, vehicle) {
+      return getByKind(list, vehicle, "name");
+    }
+
+    function getPlate(list, vehicle) {
+      return getByKind(list, vehicle, "plate");
+    }
+
+    function getNote(list, vehicle) {
+      return list.noteKey ? vehicle[list.noteKey] || "" : "";
     }
 
     function cleanHeader(value) {
-      return String(
-        value || ""
-      )
-        .replace(
-          /^\uFEFF/,
-          ""
-        )
+      return String(value || "")
+        .replace(/^﻿/, "")
         .trim();
     }
 
     function normalizeHeader(value) {
-      return normalizeText(value)
-        .replace(
-          /\s+/g,
-          ""
-        );
+      return normalizeText(value).replace(/\s+/g, "");
     }
 
     function normalizeText(value) {
-      return String(
-        value || ""
-      )
+      return String(value || "")
         .normalize("NFD")
-        .replace(
-          /[\u0300-\u036f]/g,
-          ""
-        )
+        .replace(/[̀-ͯ]/g, "")
         .toLowerCase()
-        .replace(
-          /[^a-z0-9]+/g,
-          " "
-        )
-        .replace(
-          /\s+/g,
-          " "
-        )
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
         .trim();
     }
 
@@ -1669,17 +1750,9 @@
       let cell = "";
       let insideQuotes = false;
 
-      for (
-        let index = 0;
-        index <
-        csvText.length;
-        index++
-      ) {
-        const character =
-          csvText[index];
-
-        const nextCharacter =
-          csvText[index + 1];
+      for (let index = 0; index < csvText.length; index++) {
+        const character = csvText[index];
+        const nextCharacter = csvText[index + 1];
 
         if (
           character === '"' &&
@@ -1688,43 +1761,25 @@
         ) {
           cell += '"';
           index++;
-        } else if (
-          character === '"'
-        ) {
-          insideQuotes =
-            !insideQuotes;
-        } else if (
-          character === "," &&
-          !insideQuotes
-        ) {
+        } else if (character === '"') {
+          insideQuotes = !insideQuotes;
+        } else if (character === "," && !insideQuotes) {
           row.push(cell);
           cell = "";
         } else if (
-          (
-            character === "\n" ||
-            character === "\r"
-          ) &&
+          (character === "\n" || character === "\r") &&
           !insideQuotes
         ) {
-          if (
-            character === "\r" &&
-            nextCharacter === "\n"
-          ) {
+          if (character === "\r" && nextCharacter === "\n") {
             index++;
           }
 
           row.push(cell);
 
           if (
-            row.some(
-              function (value) {
-                return (
-                  String(
-                    value || ""
-                  ).trim() !== ""
-                );
-              }
-            )
+            row.some(function (value) {
+              return String(value || "").trim() !== "";
+            })
           ) {
             rows.push(row);
           }
@@ -1736,10 +1791,7 @@
         }
       }
 
-      if (
-        cell !== "" ||
-        row.length > 0
-      ) {
+      if (cell !== "" || row.length > 0) {
         row.push(cell);
         rows.push(row);
       }
@@ -1748,53 +1800,27 @@
     }
 
     function openModal() {
-      modalOverlay.classList.add(
-        "open"
-      );
-
-      document.body.style.overflow =
-        "hidden";
+      modalOverlay.classList.add("open");
+      document.body.style.overflow = "hidden";
     }
 
     function closeModal() {
-      modalOverlay.classList.remove(
-        "open"
-      );
-
-      document.body.style.overflow =
-        "";
+      modalOverlay.classList.remove("open");
+      document.body.style.overflow = "";
     }
 
     function showError(text) {
-      message.className =
-        "message error";
-
-      message.textContent =
-        text;
+      message.className = "message error";
+      message.textContent = text;
     }
 
     function escapeHTML(value) {
       return String(value || "")
-        .replaceAll(
-          "&",
-          "&amp;"
-        )
-        .replaceAll(
-          "<",
-          "&lt;"
-        )
-        .replaceAll(
-          ">",
-          "&gt;"
-        )
-        .replaceAll(
-          '"',
-          "&quot;"
-        )
-        .replaceAll(
-          "'",
-          "&#039;"
-        );
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
   </script>
 
